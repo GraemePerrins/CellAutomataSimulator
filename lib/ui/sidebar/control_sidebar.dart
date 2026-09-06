@@ -340,95 +340,93 @@ class _ControlSidebarState extends State<ControlSidebar> {
           Row(
             children: [
               Expanded(
-                child: SizedBox(
+                child: Container(
                   height: 32,
-                  child: TextField(
-                    controller: _widthController,
-                    keyboardType: TextInputType.number,
-                    textAlignVertical: TextAlignVertical.center,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      prefixIcon: const Center(
-                        widthFactor: 1.0,
-                        child: Padding(
-                          padding: EdgeInsets.only(left: 8, right: 6),
-                          child: Text(
-                            'W',
-                            style: TextStyle(
-                              color: AppTheme.cyanAccent,
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface900,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'W',
+                        style: TextStyle(
+                          color: AppTheme.cyanAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Center(
+                          child: TextField(
+                            controller: _widthController,
+                            keyboardType: TextInputType.number,
+                            textAlignVertical: TextAlignVertical.center,
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            onSubmitted: (_) => _applyGridSize(),
                           ),
                         ),
                       ),
-                      prefixIconConstraints: const BoxConstraints(minWidth: 24, minHeight: 32),
-                      contentPadding: const EdgeInsets.only(top: 0, bottom: 0, right: 6),
-                      filled: true,
-                      fillColor: AppTheme.surface900,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: const BorderSide(color: AppTheme.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: const BorderSide(color: AppTheme.aliveColor),
-                      ),
-                    ),
-                    onSubmitted: (_) => _applyGridSize(),
+                    ],
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: SizedBox(
+                child: Container(
                   height: 32,
-                  child: TextField(
-                    controller: _heightController,
-                    keyboardType: TextInputType.number,
-                    textAlignVertical: TextAlignVertical.center,
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                    ),
-                    decoration: InputDecoration(
-                      isDense: true,
-                      prefixIcon: const Center(
-                        widthFactor: 1.0,
-                        child: Padding(
-                          padding: EdgeInsets.only(left: 8, right: 6),
-                          child: Text(
-                            'H',
-                            style: TextStyle(
-                              color: AppTheme.cyanAccent,
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface900,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppTheme.border),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      const Text(
+                        'H',
+                        style: TextStyle(
+                          color: AppTheme.cyanAccent,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Center(
+                          child: TextField(
+                            controller: _heightController,
+                            keyboardType: TextInputType.number,
+                            textAlignVertical: TextAlignVertical.center,
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
                               fontSize: 13,
                               fontWeight: FontWeight.bold,
                             ),
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            onSubmitted: (_) => _applyGridSize(),
                           ),
                         ),
                       ),
-                      prefixIconConstraints: const BoxConstraints(minWidth: 24, minHeight: 32),
-                      contentPadding: const EdgeInsets.only(top: 0, bottom: 0, right: 6),
-                      filled: true,
-                      fillColor: AppTheme.surface900,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: const BorderSide(color: AppTheme.border),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        borderSide: const BorderSide(color: AppTheme.aliveColor),
-                      ),
-                    ),
-                    onSubmitted: (_) => _applyGridSize(),
+                    ],
                   ),
                 ),
               ),
@@ -650,39 +648,38 @@ class _ControlSidebarState extends State<ControlSidebar> {
           ),
           const SizedBox(height: 6),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              SizedBox(
-                width: 85,
+              Container(
+                width: 122,
                 height: 32,
-                child: TextField(
-                  controller: _maxGenController,
-                  keyboardType: TextInputType.number,
-                  textAlignVertical: TextAlignVertical.center,
-                  maxLength: 6,
-                  buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
-                  style: const TextStyle(
-                    color: AppTheme.textPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                  ),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: '1000',
-                    hintStyle: const TextStyle(color: AppTheme.textMuted, fontSize: 11),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 10),
-                    filled: true,
-                    fillColor: AppTheme.surface900,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: const BorderSide(color: AppTheme.border),
+                decoration: BoxDecoration(
+                  color: AppTheme.surface900,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: AppTheme.border),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Center(
+                  child: TextField(
+                    controller: _maxGenController,
+                    keyboardType: TextInputType.number,
+                    textAlignVertical: TextAlignVertical.center,
+                    maxLength: 6,
+                    buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
                     ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(6),
-                      borderSide: const BorderSide(color: AppTheme.aliveColor),
+                    decoration: const InputDecoration(
+                      isDense: true,
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      hintText: '1000',
+                      hintStyle: TextStyle(color: AppTheme.textMuted, fontSize: 13),
                     ),
+                    onSubmitted: (_) => _applyMaxGenerations(),
                   ),
-                  onSubmitted: (_) => _applyMaxGenerations(),
                 ),
               ),
               const SizedBox(width: 8),

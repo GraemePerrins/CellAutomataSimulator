@@ -95,26 +95,28 @@ class SimulationProgressFooter extends StatelessWidget {
               ),
               const SizedBox(width: 16),
 
-              // Density Badge
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.grain,
-                    size: 15,
-                    color: AppTheme.textSecondary,
-                  ),
-                  const SizedBox(width: 5),
-                  Text(
-                    '${controller.density.toStringAsFixed(1)}% Density',
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
+              // Density Badge (Fixed width to prevent progress bar length from shifting)
+              SizedBox(
+                width: 210,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.grain,
+                      size: 15,
+                      color: AppTheme.textSecondary,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 5),
+                    Text(
+                      'Density: ${controller.density.toStringAsFixed(1)}%',
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               if (!isCompact) ...[
                 const SizedBox(width: 16),

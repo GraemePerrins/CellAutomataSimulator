@@ -117,24 +117,18 @@ class StudioWindowHeader extends StatelessWidget {
                       'Gen: ',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        height: 1.0,
-                        leadingDistribution: TextLeadingDistribution.even,
                       ),
                     ),
-                    Container(
-                      width: 68,
-                      alignment: Alignment.centerLeft,
+                    SizedBox(
+                      width: 50,
                       child: Text(
                         '${controller.generation}',
                         style: const TextStyle(
                           color: AppTheme.textPrimary,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
-                          height: 1.0,
-                          leadingDistribution: TextLeadingDistribution.even,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -143,9 +137,7 @@ class StudioWindowHeader extends StatelessWidget {
                       '•',
                       style: TextStyle(
                         color: AppTheme.textMuted,
-                        fontSize: 12,
-                        height: 1.0,
-                        leadingDistribution: TextLeadingDistribution.even,
+                        fontSize: 10,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -153,24 +145,18 @@ class StudioWindowHeader extends StatelessWidget {
                       'Live: ',
                       style: TextStyle(
                         color: AppTheme.aliveGlow,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        height: 1.0,
-                        leadingDistribution: TextLeadingDistribution.even,
                       ),
                     ),
-                    Container(
-                      width: 68,
-                      alignment: Alignment.centerLeft,
+                    SizedBox(
+                      width: 50,
                       child: Text(
                         '${controller.aliveCount}',
                         style: const TextStyle(
                           color: AppTheme.aliveGlow,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
-                          height: 1.0,
-                          leadingDistribution: TextLeadingDistribution.even,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
@@ -194,8 +180,8 @@ class StudioWindowHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
-                      width: 7,
-                      height: 7,
+                      width: 6,
+                      height: 6,
                       decoration: const BoxDecoration(
                         shape: BoxShape.circle,
                         color: AppTheme.aliveColor,
@@ -206,24 +192,18 @@ class StudioWindowHeader extends StatelessWidget {
                       'FPS: ',
                       style: TextStyle(
                         color: AppTheme.textSecondary,
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        height: 1.0,
-                        leadingDistribution: TextLeadingDistribution.even,
                       ),
                     ),
-                    Container(
-                      width: 36,
-                      alignment: Alignment.centerLeft,
+                    SizedBox(
+                      width: 30,
                       child: Text(
                         '${controller.currentFps.round()}',
                         style: const TextStyle(
                           color: AppTheme.aliveGlow,
-                          fontSize: 16,
-                          fontFamily: 'monospace',
-                          fontWeight: FontWeight.bold,
-                          height: 1.0,
-                          leadingDistribution: TextLeadingDistribution.even,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
