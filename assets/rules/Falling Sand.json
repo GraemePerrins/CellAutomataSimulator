@@ -1,0 +1,4 @@
+{
+  "name": "Falling Sand",
+  "expression": "cell = [C2 == 1 AND C0 == 0] OR [C0 == 1 AND C7 == 1]"
+}

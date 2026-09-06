@@ -1,0 +1,4 @@
+{
+  "name": "rule a",
+  "expression": "cell = [and(c1,c4,c2)] or [and(c7,c8,c5)]"
+}

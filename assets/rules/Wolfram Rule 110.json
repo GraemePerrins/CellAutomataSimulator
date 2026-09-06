@@ -1,0 +1,4 @@
+{
+  "name": "Wolfram Rule 110",
+  "expression": "cell = [C2 AND NOT(C1)] OR [C2 XOR C3]"
+}

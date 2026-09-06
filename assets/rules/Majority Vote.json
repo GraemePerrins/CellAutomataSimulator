@@ -1,0 +1,4 @@
+{
+  "name": "Majority Vote",
+  "expression": "cell = countOn() >= 5"
+}

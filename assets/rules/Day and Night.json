@@ -1,0 +1,4 @@
+{
+  "name": "Day and Night",
+  "expression": "cell = [C0 == 0 AND [countOn() == 3 OR countOn() >= 6]] OR [C0 == 1 AND [countOn() >= 3 AND countOn() != 5]]"
+}

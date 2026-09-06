@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cellular Automata Desktop Application — Implementation Plan & System Architecture</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 14mm 14mm 14mm 14mm;
+      @bottom-right {
+        content: "Page " counter(page);
+        font-size: 8pt;
+        color: #64748b;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+    }
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      color: #1e293b;
+      line-height: 1.48;
+      font-size: 9pt;
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+    }
+    .header-banner {
+      border-bottom: 2.5px solid #059669;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .badge {
+      display: inline-block;
+      background: #ecfdf5;
+      color: #059669;
+      font-weight: 700;
+      font-size: 7.5pt;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      padding: 2.5px 7px;
+      border-radius: 4px;
+      border: 1px solid #a7f3d0;
+      margin-bottom: 6px;
+    }
+    .badge-blue {
+      background: #eff6ff;
+      color: #2563eb;
+      border-color: #bfdbfe;
+    }
+    .badge-purple {
+      background: #faf5ff;
+      color: #7c3aed;
+      border-color: #e9d5ff;
+    }
+    h1 {
+      font-size: 17pt;
+      color: #0f172a;
+      margin: 2px 0 4px 0;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: 9.5pt;
+      color: #475569;
+      margin: 0;
+      font-weight: 500;
+    }
+    .doc-meta {
+      margin-top: 6px;
+      font-size: 8pt;
+      color: #64748b;
+      display: flex;
+      gap: 16px;
+    }
+    .doc-meta span strong {
+      color: #334155;
+    }
+    h2 {
+      font-size: 11.5pt;
+      color: #065f46;
+      border-bottom: 1.5px solid #e2e8f0;
+      padding-bottom: 3px;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      font-weight: 700;
+      page-break-after: avoid;
+    }
+    h3 {
+      font-size: 9.8pt;
+      color: #0f766e;
+      margin-top: 11px;
+      margin-bottom: 4px;
+      font-weight: 700;
+      page-break-after: avoid;
+    }
+    p {
+      margin: 0 0 7px 0;
+    }
+    .callout {
+      background: #f0fdf4;
+      border-left: 3.5px solid #10b981;
+      padding: 7px 11px;
+      margin: 8px 0;
+      border-radius: 0 4px 4px 0;
+      font-size: 8.5pt;
+      page-break-inside: avoid;
+    }
+    .callout-blue {
+      background: #eff6ff;
+      border-left: 3.5px solid #3b82f6;
+    }
+    .callout-title {
+      font-weight: 700;
+      color: #065f46;
+      margin-bottom: 2px;
+      font-size: 8.5pt;
+    }
+    .callout-blue .callout-title {
+      color: #1d4ed8;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 10px 0;
+      font-size: 8.2pt;
+      page-break-inside: avoid;
+    }
+    th, td {
+      padding: 5px 8px;
+      text-align: left;
+      border: 1px solid #cbd5e1;
+      vertical-align: top;
+    }
+    th {
+      background-color: #0f766e;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    tr:nth-child(even) td {
+      background-color: #f8fafc;
+    }
+    code {
+      font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, Consolas, monospace;
+      font-size: 8pt;
+      background: #f1f5f9;
+      padding: 1px 3.5px;
+      border-radius: 3px;
+      color: #0f766e;
+      border: 1px solid #e2e8f0;
+    }
+    pre {
+      background: #f8fafc;
+      color: #0f172a;
+      padding: 9px 12px;
+      border-radius: 5px;
+      font-size: 7.8pt;
+      line-height: 1.35;
+      margin: 7px 0;
+      overflow-x: auto;
+      page-break-inside: avoid;
+      font-family: "JetBrains Mono", "SFMono-Regular", Menlo, Monaco, monospace;
+      border: 1px solid #cbd5e1;
+    }
+    /* Ink-friendly Architecture Blueprint: Dark Blue characters on crisp white background */
+    .diagram-box {
+      background: #ffffff;
+      color: #1e3a8a;
+      padding: 10px 12px;
+      border-radius: 6px;
+      font-family: "JetBrains Mono", monospace;
+      font-size: 7.4pt;
+      font-weight: 600;
+      line-height: 1.32;
+      margin: 8px 0;
+      white-space: pre;
+      page-break-inside: avoid;
+      border: 1.5px solid #3b82f6;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 8px 0;
+      page-break-inside: avoid;
+    }
+    .card {
+      border: 1px solid #cbd5e1;
+      border-radius: 5px;
+      padding: 8px 10px;
+      background: #ffffff;
+    }
+    .card-header {
+      font-weight: 700;
+      font-size: 8.8pt;
+      color: #0f172a;
+      margin-bottom: 4px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 3px;
+    }
+    .page-break {
+      page-break-before: always;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header-banner">
+    <span class="badge">Architecture & Implementation Plan</span>
+    <span class="badge badge-blue">Flutter Linux Desktop</span>
+    <span class="badge badge-purple">High Performance CA</span>
+    <h1>Cellular Automata Desktop Application (CA Studio)</h1>
+    <p class="subtitle">Decoupled Isolate Simulation Engine, GPU Fragment Shader Viewport, and Embedded RuleEditor Dialog Integration</p>
+    <div class="doc-meta">
+      <span><strong>Document Version:</strong> 1.1 (Print-Optimized)</span>
+      <span><strong>Target Scale:</strong> 1200 &times; 800 (960,000 cells)</span>
+      <span><strong>Target Frame Rate:</strong> 60 &ndash; 144 FPS</span>
+      <span><strong>Rule Editor Subfolder:</strong> <code>RuleEditor/</code></span>
+    </div>
+  </div>
+
+  <h2>1. Executive Summary & Core Objectives</h2>
+  <p>The <strong>CA Studio</strong> application is a professional workstation tool built with Flutter for Linux Desktop designed to simulate large-scale 2D cellular automata. It resolves the computational and rendering bottlenecks of high-density grids while delivering an intuitive desktop interface faithful to the UX specifications.</p>
+  
+  <div class="callout">
+    <div class="callout-title">The Three Architectural Pillars</div>
+    <div class="callout-body">
+      1. <strong>Decoupled Compute (Background Dart Isolate):</strong> Evaluates cellular transitions across up to 960,000 cells every 10&ndash;100 ms using zero-allocation double buffers.<br>
+      2. <strong>Zero-Jank GPU Fragment Shader (Impeller / Vulkan):</strong> Translates the raw state buffer into a 2D texture (<code>sampler2D</code>) and executes <strong>exactly one draw call</strong> with signed distance fields (SDF) for silky 60&ndash;144 FPS pan, zoom, and interaction.<br>
+      3. <strong>Embedded Rule Editor Modal Dialog:</strong> Reuses the full grammar lexer, recursive descent parser, AST evaluator, functions palette, and 3x3 Moore neighborhood matrix from the <code>RuleEditor</code> codebase.
+    </div>
+  </div>
+
+  <h2>2. System Architecture Blueprint</h2>
+  <p>The application strictly separates compute cycles from the rendering and interaction clock. The UI thread never performs cell grid loops, and the compute isolate never touches UI objects.</p>
+
+  <div class="diagram-box">
++---------------------------------------------------------------------------------------------------+
+| FLUTTER MAIN / UI THREAD (Runs at locked 60 - 144 FPS)                                            |
+|                                                                                                   |
+|  [ CaStudioMainScreen ]                                                                           |
+|  +-------------------------------------------------------------+  +----------------------------+  |
+|  | VIEWPORT CANVAS (Single canvas.drawRect)                    |  | RIGHT CONTROL SIDEBAR      |  |
+|  | - CellGridCanvas with ui.FragmentProgram (cell_grid.frag)   |  | - RulesPanel               |  |
+|  | - CanvasHudOverlay (Rule, Gen, Live Count, Hover Coord)     |  |   [</> Rule Editor Button] |  |
+|  | - SimulationProgressFooter (Gen, Density, Step Rate)        |  | - CellGridPanel (H x W)    |  |
+|  +-------------------------------------------------------------+  | - SimulationPanel (Speed)  |  |
+|                                                                   | - PlaybackControlsStrip    |  |
+|                                                                   +----------------------------+  |
+|                                                                                 | Opens Modal     |
+|                                                                                 v                 |
+|  [ RuleEditorDialog (Reuses RuleEditor Codebase) ] <----------------------------+                 |
+|  - CellRuleTestPanel (3x3 Moore Neighborhood Grid C0..C8)                                         |
+|  - RuleEditorPanel (ExpressionTextField "cell = ...", Syntax Badge, FunctionsPalette)            |
+|  - "Apply to Simulation" Button -> Updates SimulationController active rule                       |
++---------------------------------------------------------------------------------------------------+
+       | Simulation Commands (Start, Pause, Rule, Dimensions)  ^ TransferableTypedData (Zero-Copy)  
+       v                                                       |                                    
++---------------------------------------------------------------------------------------------------+
+| SIMULATION WORKER (Dedicated Dart Isolate)                                                        |
+| - Double-buffered Uint8List buffers (960 KB each for 1200x800)                                    |
+| - Totalistic Kernel (Bitwise LUT for Conway's Life B3/S23, HighLife, Seeds)                       |
+| - Custom AST Kernel (Executes RuleEditor AstNode over Moore neighborhood)                          |
++---------------------------------------------------------------------------------------------------+
+                                                               | ui.Image Texture (sampler2D)       
+                                                               v                                    
++---------------------------------------------------------------------------------------------------+
+| HARDWARE GPU (Impeller / Vulkan)                                                                  |
+| - GLSL Fragment Shader: Signed Distance Fields (SDF) for Circles / Rectangles, hardware AA (<0.5ms) |
++---------------------------------------------------------------------------------------------------+
+  </div>
+
+  <div class="page-break"></div>
+
+  <h2>3. Dynamic Grid Sizing & Strict 1:1 Aspect Ratio Preservation</h2>
+  <p>The viewport canvas enforces uniform aspect ratio scaling to ensure that cells always render as <strong>exact 1:1 geometric squares or Euclidean circles</strong>, preventing any stretching into non-square rectangles or ellipses regardless of grid dimensions or window aspect ratio.</p>
+
+  <div class="callout callout-blue">
+    <div class="callout-title">Inverse Proportionality Principle: Grid Size vs. Cell Visual Size</div>
+    <div class="callout-body">
+      When the user adjusts grid dimensions (Width &times; Height in cells) in the sidebar:
+      <ul>
+        <li><strong>Smaller Grid Dimensions (e.g. 32 &times; 32 or 64 &times; 64 cells):</strong> Each individual cell renders <em>significantly larger</em> on screen (e.g. 20&ndash;35 px), showing prominent geometries, distinct inter-cell gaps, and easy target areas for mouse drawing.</li>
+        <li><strong>Larger Grid Dimensions (e.g. 1200 &times; 800 cells):</strong> Each cell renders <em>proportionally smaller</em> (&approx; 1.5 px at maximum density), packing hundreds of thousands of cells neatly across the viewport.</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>1:1 Cell Geometry & Viewport Fitting Mathematics</h3>
+  <p>Given the available viewport dimensions $(W_v \times H_v)$ and user-specified grid dimensions $(C \text{ columns} \times R \text{ rows})$:</p>
+  
+  <div class="diagram-box">
+1. Uniform Cell Side Length (Pixels):
+   S = min( W_v / C,  H_v / R )   ==> Guarantees each cell is an exact S x S square
+
+2. Active Grid Rendered Bounds on Screen:
+   W_active = C * S
+   H_active = R * S
+
+3. Symmetrical Centering Offsets (Letterboxing / Pillarboxing):
+   offset_x = (W_v - W_active) / 2
+   offset_y = (H_v - H_active) / 2
+
+4. Mouse-to-Cell Coordinate Translation (with Margin Clamping):
+   cell_x = floor( (x_mouse - offset_x) / (S * zoom) )
+   cell_y = floor( (y_mouse - offset_y) / (S * zoom) )
+   (Events with cell_x &lt; 0 or cell_x &gt;= C or cell_y &lt; 0 or cell_y &gt;= R are cleanly clipped)
+  </div>
+
+  <div class="grid-2col">
+    <div class="card">
+      <div class="card-header">GPU Shader Guarantee (No Ellipses / Distortions)</div>
+      <p>The fragment shader uniform <code>u_resolution</code> receives $(W_{\text{active}}, H_{\text{active}})$, matching the exact aspect ratio of the grid $(C / R)$.</p>
+      <p>Inside the shader, UV coordinates within each cell evaluate as <code>fract(uv * u_grid_size)</code>. Because each cell is an exact $S \times S$ square in screen space, the Signed Distance Field (SDF) <code>length(cellUV - 0.5)</code> evaluates isotropically, rendering <strong>true Euclidean circles</strong> without oval distortion.</p>
+    </div>
+    <div class="card">
+      <div class="card-header">Uniform Zoom & Pan Preservation</div>
+      <p>Zooming applies a single uniform multiplier $Z$ equally to both axes ($S' = S \times Z$), preserving the 1:1 proportion at all zoom levels.</p>
+      <p>The unused screen space around the active grid forms neat letterbox/pillarbox margins rendered with the dark workstation background (<code>#070b12</code>), maintaining focus on the cellular automata.</p>
+    </div>
+  </div>
+
+  <h2>4. Right Sidebar & Rule Editor Dialog Interaction Flow</h2>
+  <p>The right sidebar faithfully fulfills the hand-drawn sketch and Stitch UX layout. In the <strong>Rules</strong> panel, the primary button launches the Rule Editor dialog:</p>
+
+  <div class="grid-2col">
+    <div class="card">
+      <div class="card-header">1. Rules Sidebar Panel</div>
+      <p><strong>Preset Dropdown:</strong> Conway's Life (B3/S23), HighLife, Seeds, Brian's Brain, Day & Night, Custom.</p>
+      <p><strong>Parameter Chips:</strong> <code>SURVIVE: 2, 3</code>, <code>BIRTH: 3</code>, <code>STATES: 2</code>.</p>
+      <p><strong>Action:</strong> Tapping <code>[</> Rule Editor (Configure ->)]</code> opens the modal workstation dialog without leaving the app.</p>
+    </div>
+    <div class="card">
+      <div class="card-header">2. Embedded RuleEditorDialog</div>
+      <p><strong>Workstation Modal:</strong> 1100 &times; 700 dark workstation overlay.</p>
+      <p><strong>Left Panel:</strong> Interactive 3x3 Moore grid (C<sub>0</sub> &hellip; C<sub>8</sub>), toggleable states, and <code>Apply Rule</code> button.</p>
+      <p><strong>Right Panel:</strong> Monospaced expression editor with <code>cell = </code> prefix, syntax badge, and functions palette.</p>
+      <p><strong>Apply Action:</strong> Validates AST, updates simulation, and closes.</p>
+    </div>
+  </div>
+
+  <h2>5. Isolate Communication & Zero-Copy Protocol</h2>
+  <p>Dart isolates maintain isolated heaps. To avoid deep-copy memory latency of 960,000 bytes every 10&ndash;30 ms, the system utilizes <strong><code>TransferableTypedData</code></strong> for O(1) pointer transfer.</p>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Phase</th>
+        <th style="width: 35%;">Message / Channel</th>
+        <th style="width: 40%;">Description & Responsibilities</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>1. Handshake</strong></td>
+        <td><code>ReceivePort</code> &rarr; <code>SendPort</code></td>
+        <td>UI thread spawns isolate with its <code>SendPort</code>. Isolate replies with its own command <code>SendPort</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>2. UI Commands</strong></td>
+        <td><code>StartSim</code>, <code>PauseSim</code>, <code>SetRule</code>, <code>Resize</code>, <code>Randomize</code></td>
+        <td>UI dispatches lightweight control objects to isolate. Simulation tick begins or updates immediately on resize.</td>
+      </tr>
+      <tr>
+        <td><strong>3. Frame Emission</strong></td>
+        <td><code>SimulationFrameMessage</code> via <code>TransferableTypedData</code></td>
+        <td>Isolate wraps <code>Uint8List</code> into <code>TransferableTypedData.fromList([nextBuffer])</code> and sends to UI port in O(1) time.</td>
+      </tr>
+      <tr>
+        <td><strong>4. UI Ingestion</strong></td>
+        <td><code>materialize().asUint8List()</code> &rarr; <code>ui.Image</code></td>
+        <td>UI thread converts bytes into hardware texture via <code>ui.ImmutableBuffer</code> and <code>ImageDescriptor.raw</code>.</td>
+      </tr>
+      <tr>
+        <td><strong>5. Backpressure</strong></td>
+        <td>Drop-frame policy</td>
+        <td>If UI is busy during window resize, intermediate frames drop cleanly. The UI always paints the freshest state.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>6. Key Classes & Modular Responsibilities</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 25%;">Class Name</th>
+        <th style="width: 25%;">Layer / Location</th>
+        <th style="width: 50%;">Core Responsibilities</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>CaStudioApp</code></td>
+        <td>Presentation (Main)</td>
+        <td>Desktop window configuration, minimum window bounds (1200 &times; 800), global theme setup.</td>
+      </tr>
+      <tr>
+        <td><code>CaStudioMainScreen</code></td>
+        <td>Presentation (Screen)</td>
+        <td>Main workstation layout coordinating header, canvas viewport, timeline footer, and sidebar.</td>
+      </tr>
+      <tr>
+        <td><code>StudioWindowHeader</code></td>
+        <td>Presentation (Header)</td>
+        <td>Window chrome, file breadcrumb, zoom controls (<code>- 100% +</code>, <code>Center</code>), and real-time FPS badge.</td>
+      </tr>
+      <tr>
+        <td><code>CellGridViewport</code></td>
+        <td>Presentation (Viewport)</td>
+        <td>Calculates uniform aspect ratio cell scale <code>S = min(W_v / C, H_v / R)</code> to enforce strict 1:1 cell geometry (true squares/circles). Centers active grid via letterboxing/pillarboxing, translates mouse clicks to grid cells, and handles uniform pan/zoom.</td>
+      </tr>
+      <tr>
+        <td><code>CellGridCanvas</code></td>
+        <td>Presentation (CustomPainter)</td>
+        <td>Single <code>canvas.drawRect</code> draw call binding <code>ui.FragmentProgram</code> and <code>u_grid_tex</code> texture over centered <code>(W_active, H_active)</code> bounds.</td>
+      </tr>
+      <tr>
+        <td><code>CanvasHudOverlay</code></td>
+        <td>Presentation (HUD)</td>
+        <td>Top-left viewport HUD: active rule name, generation count, live cell count, and hovered <code>(X, Y)</code> coordinate.</td>
+      </tr>
+      <tr>
+        <td><code>SimulationProgressFooter</code></td>
+        <td>Presentation (Timeline)</td>
+        <td>Timeline progress bar matching wireframe sketch: <code>Gen 428 / 1,000</code>, density %, and step ms.</td>
+      </tr>
+      <tr>
+        <td><code>ControlSidebar</code></td>
+        <td>Presentation (Sidebar)</td>
+        <td>Houses <code>RulesPanel</code>, <code>CellGridPanel</code> (H &times; W dynamic sizing), <code>SimulationPanel</code>, and <code>PlaybackControlsStrip</code>.</td>
+      </tr>
+      <tr>
+        <td><code>RuleEditorDialog</code></td>
+        <td>Presentation (Modal Dialog)</td>
+        <td>Workstation modal embedding <code>CellRuleTestPanel</code> and <code>RuleEditorPanel</code> from <code>RuleEditor/</code>.</td>
+      </tr>
+      <tr>
+        <td><code>SimulationController</code></td>
+        <td>State Management</td>
+        <td>Coordinates simulation state (play, pause, step), grid geometry (columns &times; rows), rule AST, and telemetry.</td>
+      </tr>
+      <tr>
+        <td><code>RuleStudioController</code></td>
+        <td>State (Reused from RuleEditor)</td>
+        <td>Drives AST parsing, syntax validation, token insertion, and 3x3 Moore neighborhood testing.</td>
+      </tr>
+      <tr>
+        <td><code>SimulationIsolateWorker</code></td>
+        <td>Compute Engine (Isolate)</td>
+        <td>Background thread executing cellular transitions over double-buffered <code>Uint8List</code> arrays.</td>
+      </tr>
+      <tr>
+        <td><code>TotalisticKernel</code></td>
+        <td>Compute Kernel</td>
+        <td>Fast-path bitwise lookup table for standard Life-like rules (Conway B3/S23, HighLife, etc.).</td>
+      </tr>
+      <tr>
+        <td><code>AstEvaluatorKernel</code></td>
+        <td>Compute Kernel</td>
+        <td>Custom rule engine evaluating the <code>AstNode</code> expression tree over neighborhood states.</td>
+      </tr>
+      <tr>
+        <td><code>cell_grid.frag</code></td>
+        <td>GPU Shader (GLSL)</td>
+        <td>Hardware fragment shader computing isotropic SDF anti-aliased circles (true Euclidean circles) or geometric squares (uniform padding) with zero-cost palette mapping.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+
+  <h2>7. Implementation Roadmap & Milestones</h2>
+
+  <div class="grid-2col">
+    <div class="card">
+      <div class="card-header">Phase 1: Project Setup & Code Sharing</div>
+      <p>&bull; Initialize Flutter desktop application inside <code>CellAutomata/</code>.</p>
+      <p>&bull; Add <code>RuleEditor</code> as a local path dependency (<code>path: ../RuleEditor</code>) in <code>pubspec.yaml</code>.</p>
+      <p>&bull; Compile and configure the GLSL fragment shader asset (<code>cell_grid.frag</code>).</p>
+    </div>
+    <div class="card">
+      <div class="card-header">Phase 2: Isolate Engine & Zero-Copy IPC</div>
+      <p>&bull; Implement <code>SimulationIsolateWorker</code> with double-buffered <code>Uint8List</code> arrays.</p>
+      <p>&bull; Build <code>TotalisticKernel</code> and <code>AstEvaluatorKernel</code>.</p>
+      <p>&bull; Wire two-way <code>SendPort</code> / <code>ReceivePort</code> with <code>TransferableTypedData</code> supporting dynamic grid resizing.</p>
+    </div>
+  </div>
+
+  <div class="grid-2col">
+    <div class="card">
+      <div class="card-header">Phase 3: GPU Shader Viewport & Canvas</div>
+      <p>&bull; Implement <code>CellGridCanvas</code> with single draw call <code>canvas.drawRect</code>.</p>
+      <p>&bull; Bind <code>u_grid_tex</code> texture created from isolate buffer.</p>
+      <p>&bull; Enforce uniform 1:1 cell aspect ratio fitting (letterboxing/pillarboxing) so cells render as perfect squares or circles without stretching.</p>
+      <p>&bull; Implement uniform pan, zoom, mouse coordinate mapping, and HUD overlay.</p>
+    </div>
+    <div class="card">
+      <div class="card-header">Phase 4: Sidebar Controls & Timeline</div>
+      <p>&bull; Build right sidebar: Rules, Grid Size (H &times; W dynamic inputs), Simulation parameters, and Playback strip.</p>
+      <p>&bull; Implement bottom shaded timeline progress bar with real-time metrics.</p>
+      <p>&bull; Wire playback lifecycle (Play, Pause, Step, Rewind, Multipliers).</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top: 10px;">
+    <div class="card-header">Phase 5: Rule Editor Dialog Integration & Verification</div>
+    <p>&bull; Construct <code>RuleEditorDialog</code> embedding <code>CellRuleTestPanel</code> and <code>RuleEditorPanel</code> from <code>RuleEditor/</code>.</p>
+    <p>&bull; Wire the <code>[</> Rule Editor]</code> button to open the modal dialog.</p>
+    <p>&bull; Implement "Apply to Simulation" action to pass the compiled <code>CellRule</code> / <code>AstNode</code> directly to the isolate worker.</p>
+    <p>&bull; Verify 60+ FPS performance on 1200 &times; 800 grid and seamless rule execution.</p>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,4 @@
+{
+  "name": "Stochastic Decay",
+  "expression": "cell = [C0 == 1 AND countOn() > 0] OR [C0 == 1 AND rnd()]"
+}

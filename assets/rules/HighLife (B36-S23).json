@@ -1,0 +1,4 @@
+{
+  "name": "HighLife (B36/S23)",
+  "expression": "cell = [countOn() == 3] OR [countOn() == 6] OR [C0 == 1 AND countOn() == 2]"
+}

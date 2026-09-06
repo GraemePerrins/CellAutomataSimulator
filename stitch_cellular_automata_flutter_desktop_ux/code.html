@@ -1,0 +1,656 @@
+<!DOCTYPE html><html class="h-full bg-slate-950 text-slate-100 antialiased" lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>CA Studio — Cellular Automata Lab</title>
+<!-- Tailwind CSS v3 with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Phosphor Icons for crisp developer tooling icons -->
+<script src="https://unpkg.com/@phosphor-icons/web"></script><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/regular/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/thin/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/light/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/bold/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/fill/style.css"><link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/duotone/style.css">
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#059669',
+              glow: '#00f59b'
+            },
+            surface: {
+              900: '#0b0f17',
+              850: '#111726',
+              800: '#161e31',
+              700: '#1e293b',
+              600: '#334155'
+            }
+          },
+          fontFamily: {
+            mono: ['JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
+            sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif']
+          },
+          boxShadow: {
+            'glow-emerald': '0 0 25px -4px rgba(16, 185, 129, 0.35)',
+            'glow-cyan': '0 0 20px -3px rgba(6, 182, 212, 0.45)'
+          }
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-scrollbars">
+    /* Subtle custom scrollbar for desktop tool panels */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #334155;
+    }
+  </style>
+<style data-purpose="canvas-styling">
+    /* Pixelated crisp rendering for cellular automata matrix */
+    #automata-canvas {
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .grid-backdrop {
+      background-size: 24px 24px;
+      background-image: 
+        radial-gradient(circle, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans overflow-hidden select-none bg-surface-900 text-slate-200">
+<!-- BEGIN: DesktopWindowChrome -->
+<!-- Top application bar mimicking native Flutter / desktop app header -->
+<header class="h-10 border-b border-surface-700/70 bg-surface-850 flex items-center justify-between px-3 text-xs tracking-wide shrink-0 z-30" data-purpose="app-window-header">
+<!-- Left: Window Controls & App Title -->
+<div class="flex items-center space-x-3">
+<!-- Window traffic lights -->
+<div class="flex items-center space-x-1.5 pr-2">
+<span class="w-3 h-3 rounded-full bg-rose-500/80 border border-rose-600/40 hover:opacity-80 transition cursor-pointer"></span>
+<span class="w-3 h-3 rounded-full bg-amber-500/80 border border-amber-600/40 hover:opacity-80 transition cursor-pointer"></span>
+<span class="w-3 h-3 rounded-full bg-emerald-500/80 border border-emerald-600/40 hover:opacity-80 transition cursor-pointer"></span>
+</div>
+<!-- App Name & Workspace Breadcrumb -->
+<div class="flex items-center space-x-2 text-slate-400">
+<i class="ph-bold ph-cube text-emerald-400 text-sm"></i>
+<span class="font-semibold text-slate-200 tracking-normal">CA Studio</span>
+<span class="text-slate-600">/</span>
+<span class="text-slate-300 font-mono text-[11px] bg-surface-800 px-2 py-0.5 rounded border border-surface-700">conway_glider_gun.cas</span>
+<span class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 font-mono">
+<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          Ready
+        </span>
+</div>
+</div>
+<!-- Center: Viewport & Zoom Quick Controls -->
+<div class="flex items-center space-x-1.5 bg-surface-800/80 border border-surface-700/80 px-2 py-1 rounded-md text-[11px] text-slate-300">
+<button class="hover:text-white p-0.5 transition" id="btn-zoom-out" title="Zoom Out"><i class="ph ph-minus"></i></button>
+<span class="font-mono text-slate-200 px-1.5" id="zoom-indicator">100%</span>
+<button class="hover:text-white p-0.5 transition" id="btn-zoom-in" title="Zoom In"><i class="ph ph-plus"></i></button>
+<div class="w-px h-3 bg-surface-700 mx-1"></div>
+<button class="hover:text-white px-1 text-slate-400 hover:text-emerald-300 transition text-[10px]" id="btn-center-view" title="Reset Center">Center</button>
+</div>
+<!-- Right: Workspace Actions & Stats Badges -->
+<div class="flex items-center space-x-2 text-slate-400">
+<div class="flex items-center gap-1 font-mono text-[11px] text-slate-400 bg-surface-800 px-2 py-0.5 rounded border border-surface-700">
+<span class="text-slate-500">FPS:</span>
+<span class="text-emerald-400 font-bold" id="fps-display">60.2</span>
+</div>
+<button class="p-1 hover:text-slate-200 hover:bg-surface-700 rounded transition" title="Grid Config"><i class="ph ph-sliders text-sm"></i></button>
+<button class="p-1 hover:text-slate-200 hover:bg-surface-700 rounded transition" title="Help &amp; Shortcuts"><i class="ph ph-question text-sm"></i></button>
+<button class="p-1 hover:text-slate-200 hover:bg-surface-700 rounded transition" title="Toggle Fullscreen"><i class="ph ph-arrows-out-simple text-sm"></i></button>
+</div>
+</header>
+<!-- END: DesktopWindowChrome -->
+<!-- BEGIN: MainWorkspaceLayout -->
+<!-- Split layout: Canvas on Left & Middle, Tooling Inspector on Right -->
+<main class="flex-1 flex overflow-hidden min-h-0 relative">
+<!-- BEGIN: CellsGridArea -->
+<!-- Central Viewport: Cells Grid Canvas and Bottom Progress Status -->
+<section class="flex-1 flex flex-col min-w-0 bg-surface-900 relative" data-purpose="cells-grid-viewport">
+<!-- Canvas Overlay Indicators (Top-Left HUD) -->
+<div class="absolute top-3 left-3 z-10 pointer-events-none flex flex-col gap-1.5 font-mono text-[11px]">
+<div class="bg-surface-900/90 backdrop-blur border border-surface-700 px-3 py-2 rounded-md shadow-xl text-xs font-mono text-slate-200 flex items-center gap-3.5"><div class="flex items-center gap-1.5"><span class="text-slate-400 font-medium">Rule:</span> <span class="text-emerald-400 font-bold tracking-tight" id="hud-rule-name">Conway's Life</span></div><div class="h-3.5 w-px bg-surface-700"></div><div class="flex items-center gap-1.5"><span class="text-slate-400 font-medium">Generation:</span> <span class="text-emerald-400 font-bold" id="hud-current-gen">428</span> <span class="text-slate-500">/</span> <span class="text-slate-400">1,000</span></div></div>
+</div>
+<!-- Quick Canvas Interaction Toolbar (Top-Right of canvas) -->
+
+<!-- Center Cellular Matrix Canvas Container -->
+<div class="flex-1 overflow-hidden relative grid-backdrop flex items-center justify-center p-4" id="canvas-container">
+<!-- Interactive High-Performance Canvas for Simulation -->
+<canvas class="shadow-2xl shadow-emerald-950/40 border border-surface-700/60 rounded bg-[#070b12] cursor-crosshair max-w-full max-h-full" height="480" id="automata-canvas" width="640"></canvas>
+</div>
+<!-- BEGIN: ProgressBarArea -->
+<!-- Shaded progress bar as shown in sketch under the cells grid -->
+<footer class="h-12 bg-surface-850 border-t border-surface-700/80 px-4 flex items-center gap-4 shrink-0" data-purpose="simulation-progress-bar-container">
+<!-- Progress details label -->
+<div class="flex items-center gap-2 text-xs font-mono min-w-[210px] text-slate-300">
+<i class="ph-fill ph-chart-line-up text-emerald-400"></i>
+<span class="">Gen <strong class="text-emerald-400 font-semibold" id="bar-current-gen">428</strong> / <span class="text-slate-400" id="bar-target-gen">1,000</span></span>
+<span class="text-slate-500 font-sans text-[11px]">(42.8%)</span>
+</div>
+<!-- The Shaded Bar Graphic -->
+<div class="flex-1 flex flex-col justify-center gap-1">
+<div class="h-2.5 w-full bg-surface-800 rounded-full overflow-hidden border border-surface-700/70 p-0.5 relative">
+<div class="h-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 rounded-full transition-all duration-150 shadow-glow-emerald" id="simulation-progress-fill" style="width: 42.8%;"></div>
+</div>
+</div>
+<!-- Metric badges along the progress bar -->
+<div class="hidden lg:flex items-center gap-3 font-mono text-[11px] text-slate-400 border-l border-surface-700 pl-3">
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+<span class="">Density: <span class="text-slate-200">14.2%</span></span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+<span class="">Step: <span class="text-slate-200">30ms</span></span>
+</div>
+</div>
+</footer>
+<!-- END: ProgressBarArea -->
+</section>
+<!-- END: CellsGridArea -->
+<!-- BEGIN: RightControlSidebar -->
+<!-- Faithful to the sketch: Rules, Cell Grid, Simulation, and Bottom Playback strip -->
+<aside class="w-80 md:w-88 xl:w-96 bg-surface-850 border-l border-surface-700/80 flex flex-col justify-between shrink-0 overflow-hidden shadow-xl z-20" data-purpose="sidebar-control-panels">
+<!-- Scrollable Control Stack -->
+<div class="flex-1 overflow-y-auto divide-y divide-surface-700/60 text-xs">
+<!-- PANEL 1: RULES SECTION -->
+<section class="p-3.5 space-y-3" data-purpose="panel-rules"><div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<i class="ph-bold ph-git-branch text-emerald-400"></i>
+<h2 class="font-semibold text-slate-200 uppercase tracking-wider text-[11px]">Rules</h2>
+</div>
+
+</div>
+<div class="space-y-1">
+<label class="text-[11px] text-slate-400 flex items-center justify-between font-medium">
+<span class="">Rule Name</span>
+<span class="text-[10px] text-slate-500">Preset list</span>
+</label>
+<div class="relative">
+<select class="w-full bg-surface-800 text-slate-200 border border-surface-700 rounded-md py-1.5 pl-2.5 pr-8 text-xs focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition appearance-none cursor-pointer font-medium" id="rule-selector">
+<option selected="" value="b3s23">Conway's Life (B3/S23)</option>
+<option value="highlife">HighLife (B36/S23)</option>
+<option value="seeds">Seeds (B2/S)</option>
+<option value="briansbrain">Brian's Brain (3-State)</option>
+<option value="daynight">Day &amp; Night (B3678/S34678)</option>
+<option value="custom">Custom Custom Specification...</option>
+</select>
+<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+<i class="ph ph-caret-down text-xs"></i>
+</div>
+</div>
+</div>
+<div class="space-y-2 pt-0.5">
+<button class="w-full bg-surface-800 hover:bg-surface-700/80 text-slate-200 border border-surface-700 hover:border-emerald-500/50 rounded-md py-1.5 px-3 flex items-center justify-between transition group font-medium" id="btn-open-rule-editor">
+<span class="flex items-center gap-2">
+<i class="ph ph-code text-slate-400 group-hover:text-emerald-400 transition"></i>
+<span class="">Rule Editor</span>
+</span>
+<span class="text-[10px] text-slate-400 font-mono group-hover:text-slate-200">Configure →</span>
+</button>
+</div>
+</section>
+<!-- PANEL 2: CELL GRID SECTION -->
+<section class="p-3.5 space-y-3" data-purpose="panel-cell-grid">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<i class="ph-bold ph-grid-four text-cyan-400"></i>
+<h2 class="font-semibold text-slate-200 uppercase tracking-wider text-[11px]">Cell Grid</h2>
+</div>
+<span class="text-[10px] text-slate-500 font-mono">16,384 cells</span>
+</div>
+<!-- Grid Size H x W Inputs (Directly matching sketch) -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between text-[11px] text-slate-400">
+<label class="font-medium">Grid Size (H × W)</label>
+
+</div>
+<div class="grid grid-cols-2 gap-2 font-mono">
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-500 text-[11px]">H</span>
+<input class="w-full bg-surface-800 text-slate-100 border border-surface-700 rounded-md py-1 pl-8 pr-2 text-xs focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" id="input-height" max="512" min="16" step="16" type="number" value="128">
+</div>
+<div class="relative">
+<span class="absolute inset-y-0 left-0 flex items-center pl-2.5 text-slate-500 text-[11px]">W</span>
+<input class="w-full bg-surface-800 text-slate-100 border border-surface-700 rounded-md py-1 pl-8 pr-2 text-xs focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" id="input-width" max="512" min="16" step="16" type="number" value="128">
+</div>
+</div>
+</div>
+<!-- Boundary Condition Toggle & Cell Resolution -->
+
+<!-- Buttons: Reset Grid & Randomise (Directly matching sketch) -->
+<div class="grid grid-cols-2 gap-2 pt-1">
+<button class="w-full bg-surface-800 hover:bg-surface-700 text-slate-300 hover:text-white border border-surface-700 rounded-md py-2 px-2 text-xs font-medium transition flex items-center justify-center gap-1.5" id="btn-reset-grid">
+<i class="ph ph-arrow-counter-clockwise"></i>
+<span class="">Reset Grid</span>
+</button>
+<button class="w-full bg-surface-700 hover:bg-slate-600 text-emerald-300 hover:text-emerald-200 border border-surface-600 rounded-md py-2 px-2 text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-sm" id="btn-randomise">
+<i class="ph ph-sparkle"></i>
+<span class="">Randomise</span>
+</button>
+</div>
+<!-- Palette Style selector -->
+
+</section>
+<!-- PANEL 3: SIMULATION SECTION -->
+<section class="p-3.5 space-y-3" data-purpose="panel-simulation">
+<div class="flex items-center justify-between">
+<div class="flex items-center space-x-2">
+<i class="ph-bold ph-play-circle text-purple-400"></i>
+<h2 class="font-semibold text-slate-200 uppercase tracking-wider text-[11px]">Simulation</h2>
+</div>
+
+</div>
+<!-- Num Generations Input (Matching sketch) -->
+<div class="space-y-1">
+<div class="flex items-center justify-between text-[11px] text-slate-400">
+<label class="font-medium" for="input-max-gen">Number&nbsp; Generations</label>
+<button class="text-xs text-slate-400 hover:text-white transition" title="Toggle infinite generation mode">
+
+</button>
+</div>
+<div class="relative font-mono">
+<input class="w-full bg-surface-800 text-slate-100 border border-surface-700 rounded-md py-1.5 px-2.5 text-xs focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" id="input-max-gen" max="100000" min="50" step="100" type="number" value="1000">
+<span class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-500 text-[11px]">steps</span>
+</div>
+</div>
+<!-- Interval XX ms (Matching sketch) -->
+<div class="space-y-1.5">
+<div class="flex items-center justify-between text-[11px]">
+<span class="text-slate-400 font-medium">Interval / Speed</span>
+<span class="font-mono text-emerald-400 font-semibold" id="label-interval">30 ms <span class="text-slate-500 font-normal">(~33 ops/s)</span></span>
+</div>
+<input class="w-full h-1.5 bg-surface-800 rounded-lg appearance-none cursor-pointer accent-emerald-500" id="slider-interval" max="250" min="5" type="range" value="30">
+<div class="flex justify-between text-[10px] text-slate-500 font-mono">
+<span class="">5ms (Fast)</span>
+<span class="">100ms</span>
+<span class="">250ms (Slow)</span>
+</div>
+</div>
+<!-- Tools: Snapshot Button & Record Toggle (Directly matching sketch) -->
+<div class="pt-1 space-y-2">
+<!-- Snapshot button -->
+<button class="w-full bg-surface-800 hover:bg-surface-700/90 text-slate-200 border border-surface-700 hover:border-slate-500 rounded-md py-2 px-3 flex items-center gap-2 font-medium transition text-xs shadow-sm" id="btn-snapshot">
+<i class="ph ph-camera text-slate-400"></i>
+<span class="">Snapshot Frame (PNG)</span>
+</button>
+<!-- Record checkbox/switch (matching sketch 'record [x]') -->
+<div class="flex items-center bg-surface-800/90 border border-surface-700/90 rounded-md px-3 py-2 gap-3 justify-between">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75 hidden" id="rec-pulse"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-rose-500" id="rec-dot"></span>
+</span>
+<span class="text-xs font-medium text-slate-200">Record Video / GIF</span>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" id="toggle-record" type="checkbox">
+<div class="w-8 h-4 bg-surface-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-rose-500"></div>
+</label>
+</div>
+</div>
+</section>
+</div>
+<!-- BEGIN: BottomPlaybackControlsToolbar -->
+<!-- Bottom bar of the sidebar corresponding to the control buttons sketch: |<  <|  ▶/⏸  |> -->
+<div class="p-3 bg-surface-900 border-t border-surface-700/90 flex flex-col gap-2 shrink-0" data-purpose="playback-controls-bar">
+<!-- Main Controls row: Reset to Start, Step Back, Play/Pause Primary, Step Forward -->
+<div class="flex items-center justify-between gap-1.5">
+<!-- Rewind to Gen 0 -->
+<button class="p-2.5 rounded-md bg-surface-800 hover:bg-surface-700 border border-surface-700 text-slate-300 hover:text-white transition flex items-center justify-center text-sm" id="btn-rewind" title="Rewind to Start (0)">
+<i class="ph-bold ph-skip-back"></i>
+</button>
+<!-- Step backward one generation -->
+<button class="p-2.5 rounded-md bg-surface-800 hover:bg-surface-700 border border-surface-700 text-slate-300 hover:text-white transition flex items-center justify-center text-sm" id="btn-step-prev" title="Step Previous (J)">
+<i class="ph-bold ph-caret-double-left"></i>
+</button>
+<!-- Big Play / Pause Primary Accent Button (Center highlight) -->
+<button class="flex-1 py-2.5 px-4 rounded-md bg-emerald-500 hover:bg-emerald-400 active:scale-[0.98] text-slate-950 font-bold transition flex items-center justify-center gap-2 text-sm shadow-glow-emerald" id="btn-play-pause" title="Play / Pause (Space)">
+<i class="ph-fill ph-play text-base" id="play-icon"></i>
+<span id="play-text" class="">Simulate</span>
+</button>
+<!-- Step forward one generation -->
+<button class="p-2.5 rounded-md bg-surface-800 hover:bg-surface-700 border border-surface-700 text-slate-300 hover:text-white transition flex items-center justify-center text-sm" id="btn-step-next" title="Step Next (K)">
+<i class="ph-bold ph-caret-double-right"></i>
+</button>
+</div>
+<!-- Speed multiplier chips -->
+
+</div>
+<!-- END: BottomPlaybackControlsToolbar -->
+</aside>
+<!-- END: RightControlSidebar -->
+</main>
+<!-- END: MainWorkspaceLayout -->
+<!-- BEGIN: InteractiveSimulationLogic -->
+<!-- JavaScript engine powering the cellular automata grid and controls -->
+<script data-purpose="cellular-automata-engine">
+    // Simulation state setup
+    const canvas = document.getElementById('automata-canvas');
+    const ctx = canvas.getContext('2d');
+
+    const COLS = 128;
+    const ROWS = 96;
+    let grid = new Uint8Array(COLS * ROWS);
+    let nextGrid = new Uint8Array(COLS * ROWS);
+
+    let isRunning = false;
+    let currentGeneration = 428;
+    let maxGenerations = 1000;
+    let stepInterval = 30; // ms
+    let animationTimer = null;
+    let isDrawing = false;
+    let drawMode = 1; // 1: birth cell, 0: erase
+
+    // DOM References
+    const btnPlayPause = document.getElementById('btn-play-pause');
+    const playIcon = document.getElementById('play-icon');
+    const playText = document.getElementById('play-text');
+    const btnStepNext = document.getElementById('btn-step-next');
+    const btnStepPrev = document.getElementById('btn-step-prev');
+    const btnRewind = document.getElementById('btn-rewind');
+    const btnRandomise = document.getElementById('btn-randomise');
+    const btnResetGrid = document.getElementById('btn-reset-grid');
+    const sliderInterval = document.getElementById('slider-interval');
+    const labelInterval = document.getElementById('label-interval');
+    const inputMaxGen = document.getElementById('input-max-gen');
+    const barCurrentGen = document.getElementById('bar-current-gen');
+    const barTargetGen = document.getElementById('bar-target-gen');
+    const progressFill = document.getElementById('simulation-progress-fill');
+    const hudLiveCells = document.getElementById('hud-live-cells');
+    const hudCoords = document.getElementById('hud-coords');
+    const ruleSelector = document.getElementById('rule-selector');
+    const hudRuleName = document.getElementById('hud-rule-name');
+    const badgeSurvive = document.getElementById('badge-survive');
+    const badgeBirth = document.getElementById('badge-birth');
+    const toggleRecord = document.getElementById('toggle-record');
+    const recPulse = document.getElementById('rec-pulse');
+
+    // Color definitions for emerald cyber aesthetic
+    const COLOR_ALIVE = '#10b981';
+    const COLOR_ALIVE_GLOW = '#34d399';
+    const COLOR_DEAD = '#070b12';
+    const COLOR_GRID_LINE = 'rgba(30, 41, 59, 0.4)';
+
+    // Pre-populate random pattern on load
+    function randomizeGrid(density = 0.16) {
+      let count = 0;
+      for (let i = 0; i < COLS * ROWS; i++) {
+        const val = Math.random() < density ? 1 : 0;
+        grid[i] = val;
+        if (val) count++;
+      }
+      renderCanvas();
+      updateHUD(count);
+    }
+
+    // Render 2D grid matrix onto Canvas
+    function renderCanvas() {
+      const cellWidth = canvas.width / COLS;
+      const cellHeight = canvas.height / ROWS;
+
+      // Clear
+      ctx.fillStyle = COLOR_DEAD;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      let aliveCount = 0;
+
+      // Draw Cells
+      ctx.fillStyle = COLOR_ALIVE;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          const idx = r * COLS + c;
+          if (grid[idx] === 1) {
+            aliveCount++;
+            ctx.fillRect(c * cellWidth, r * cellHeight, cellWidth - 0.5, cellHeight - 0.5);
+          }
+        }
+      }
+
+      updateHUD(aliveCount);
+    }
+
+    // Step Conway's B3/S23
+    function stepSimulation() {
+      let aliveCount = 0;
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          // Count 8 neighbors with toroidal wrap
+          let neighbors = 0;
+          for (let dr = -1; dr <= 1; dr++) {
+            for (let dc = -1; dc <= 1; dc++) {
+              if (dr === 0 && dc === 0) continue;
+              const nr = (r + dr + ROWS) % ROWS;
+              const nc = (c + dc + COLS) % COLS;
+              if (grid[nr * COLS + nc] === 1) neighbors++;
+            }
+          }
+
+          const currentIdx = r * COLS + c;
+          const isAlive = grid[currentIdx] === 1;
+
+          // Conway's Rule B3/S23
+          let nextState = 0;
+          if (isAlive && (neighbors === 2 || neighbors === 3)) {
+            nextState = 1;
+          } else if (!isAlive && neighbors === 3) {
+            nextState = 1;
+          }
+
+          nextGrid[currentIdx] = nextState;
+          if (nextState === 1) aliveCount++;
+        }
+      }
+
+      // Swap buffers
+      const temp = grid;
+      grid = nextGrid;
+      nextGrid = temp;
+
+      // Increment gen & update UI
+      currentGeneration++;
+      updateProgressUI(aliveCount);
+      renderCanvas();
+
+      if (currentGeneration >= maxGenerations) {
+        pauseSimulation();
+      }
+    }
+
+    function updateProgressUI(aliveCount) {
+      barCurrentGen.textContent = currentGeneration.toLocaleString();
+      barTargetGen.textContent = maxGenerations.toLocaleString();
+      const pct = Math.min(100, (currentGeneration / maxGenerations) * 100);
+      progressFill.style.width = pct + '%';
+      if (aliveCount !== undefined) {
+        hudLiveCells.textContent = aliveCount.toLocaleString();
+      }
+    }
+
+    function updateHUD(aliveCount) {
+      if (aliveCount !== undefined) {
+        hudLiveCells.textContent = aliveCount.toLocaleString();
+      }
+    }
+
+    // Simulation loop control
+    function startSimulation() {
+      if (isRunning) return;
+      isRunning = true;
+      playIcon.className = 'ph-fill ph-pause text-base';
+      playText.textContent = 'Pause';
+      btnPlayPause.classList.replace('bg-emerald-500', 'bg-amber-500');
+      btnPlayPause.classList.replace('hover:bg-emerald-400', 'hover:bg-amber-400');
+
+      animationTimer = setInterval(() => {
+        stepSimulation();
+      }, stepInterval);
+    }
+
+    function pauseSimulation() {
+      isRunning = false;
+      playIcon.className = 'ph-fill ph-play text-base';
+      playText.textContent = 'Simulate';
+      btnPlayPause.classList.replace('bg-amber-500', 'bg-emerald-500');
+      btnPlayPause.classList.replace('hover:bg-amber-400', 'hover:bg-emerald-400');
+
+      if (animationTimer) {
+        clearInterval(animationTimer);
+        animationTimer = null;
+      }
+    }
+
+    // Attach Event Listeners
+    btnPlayPause.addEventListener('click', () => {
+      if (isRunning) {
+        pauseSimulation();
+      } else {
+        startSimulation();
+      }
+    });
+
+    btnStepNext.addEventListener('click', () => {
+      pauseSimulation();
+      stepSimulation();
+    });
+
+    btnStepPrev.addEventListener('click', () => {
+      pauseSimulation();
+      if (currentGeneration > 0) {
+        currentGeneration = Math.max(0, currentGeneration - 1);
+        updateProgressUI();
+      }
+    });
+
+    btnRewind.addEventListener('click', () => {
+      pauseSimulation();
+      currentGeneration = 0;
+      updateProgressUI();
+      randomizeGrid(0.12);
+    });
+
+    btnRandomise.addEventListener('click', () => {
+      randomizeGrid(0.18);
+    });
+
+    btnResetGrid.addEventListener('click', () => {
+      pauseSimulation();
+      grid.fill(0);
+      currentGeneration = 0;
+      updateProgressUI(0);
+      renderCanvas();
+    });
+
+    sliderInterval.addEventListener('input', (e) => {
+      stepInterval = parseInt(e.target.value, 10);
+      const ops = Math.round(1000 / stepInterval);
+      labelInterval.innerHTML = `${stepInterval} ms <span class="text-slate-500 font-normal">(~${ops} ops/s)</span>`;
+      if (isRunning) {
+        pauseSimulation();
+        startSimulation();
+      }
+    });
+
+    inputMaxGen.addEventListener('change', (e) => {
+      maxGenerations = parseInt(e.target.value, 10) || 1000;
+      updateProgressUI();
+    });
+
+    ruleSelector.addEventListener('change', (e) => {
+      const val = e.target.value;
+      if (val === 'highlife') {
+        hudRuleName.textContent = 'B36/S23 (HighLife)';
+        badgeSurvive.textContent = '2, 3';
+        badgeBirth.textContent = '3, 6';
+      } else if (val === 'seeds') {
+        hudRuleName.textContent = 'B2/S (Seeds)';
+        badgeSurvive.textContent = 'None';
+        badgeBirth.textContent = '2';
+      } else if (val === 'briansbrain') {
+        hudRuleName.textContent = 'Brian\'s Brain';
+        badgeSurvive.textContent = 'Decay';
+        badgeBirth.textContent = '2';
+      } else {
+        hudRuleName.textContent = 'B3/S23 (Life)';
+        badgeSurvive.textContent = '2, 3';
+        badgeBirth.textContent = '3';
+      }
+    });
+
+    toggleRecord.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        recPulse.classList.remove('hidden');
+      } else {
+        recPulse.classList.add('hidden');
+      }
+    });
+
+    // Interactive Drawing on Canvas
+    function getGridCoords(e) {
+      const rect = canvas.getBoundingClientRect();
+      const x = Math.floor(((e.clientX - rect.left) / rect.width) * COLS);
+      const y = Math.floor(((e.clientY - rect.top) / rect.height) * ROWS);
+      return { 
+        x: Math.max(0, Math.min(COLS - 1, x)), 
+        y: Math.max(0, Math.min(ROWS - 1, y)) 
+      };
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+      const { x, y } = getGridCoords(e);
+      hudCoords.textContent = `(X: ${x}, Y: ${y})`;
+
+      if (isDrawing) {
+        const idx = y * COLS + x;
+        grid[idx] = drawMode;
+        renderCanvas();
+      }
+    });
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      const { x, y } = getGridCoords(e);
+      const idx = y * COLS + x;
+      drawMode = grid[idx] === 1 ? 0 : 1;
+      grid[idx] = drawMode;
+      renderCanvas();
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDrawing = false;
+    });
+
+    // Clear Button in HUD
+    document.getElementById('tool-clear').addEventListener('click', () => {
+      grid.fill(0);
+      renderCanvas();
+    });
+
+    // Snapshot frame mock
+    document.getElementById('btn-snapshot').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = `ca_frame_gen_${currentGeneration}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    });
+
+    // Initial setup
+    randomizeGrid(0.18);
+    updateProgressUI();
+  </script>
+<!-- END: InteractiveSimulationLogic -->
+
+
+</body></html>

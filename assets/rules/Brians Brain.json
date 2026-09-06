@@ -1,0 +1,4 @@
+{
+  "name": "Brian's Brain",
+  "expression": "cell = [C0 == 0] AND [countOn() == 2]"
+}

@@ -1,0 +1,4 @@
+{
+  "name": "Wolfram Rule 30",
+  "expression": "cell = C1 XOR [C2 OR C3]"
+}

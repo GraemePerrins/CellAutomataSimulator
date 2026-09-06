@@ -1,0 +1,4 @@
+{
+  "name": "Seeds (B2/S)",
+  "expression": "cell = [C0 == 0] AND [countOn() == 2]"
+}
