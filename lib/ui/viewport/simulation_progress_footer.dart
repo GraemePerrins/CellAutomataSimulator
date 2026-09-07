@@ -31,42 +31,41 @@ class SimulationProgressFooter extends StatelessWidget {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final isCompact = constraints.maxWidth < 620;
+              // Generation display (fixed width & fixed format length to avoid progress bar shifting)
+              final totalStr = maxGen > 0 ? maxGen.toString() : '∞';
+              final padLength = maxGen > 0 ? totalStr.length : 5;
+              final genStr = currentGen.toString().padLeft(padLength, '0');
+
               return Row(
                 children: [
-              // Generation display
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.timelapse_outlined,
-                    size: 15,
-                    color: AppTheme.textSecondary,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    'Gen $currentGen',
-                    style: const TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
+                  SizedBox(
+                    width: 220,
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.timelapse_outlined,
+                          size: 15,
+                          color: AppTheme.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'Gen $genStr / $totalStr',
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: AppTheme.textPrimary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: AppTheme.monospaceFont,
+                              fontFamilyFallback: AppTheme.monospaceFontFallback,
+                              fontFeatures: [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  if (maxGen > 0) ...[
-                    const SizedBox(width: 4),
-                    Text(
-                      '/ $maxGen',
-                      style: const TextStyle(
-                        color: AppTheme.textMuted,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              const SizedBox(width: 16),
+                  const SizedBox(width: 16),
 
               // Progress Bar
               Expanded(
@@ -113,6 +112,9 @@ class SimulationProgressFooter extends StatelessWidget {
                         color: AppTheme.textPrimary,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
+                        fontFamily: AppTheme.monospaceFont,
+                        fontFamilyFallback: AppTheme.monospaceFontFallback,
+                        fontFeatures: [FontFeature.tabularFigures()],
                       ),
                     ),
                   ],
@@ -147,8 +149,10 @@ class SimulationProgressFooter extends StatelessWidget {
                           style: const TextStyle(
                             color: AppTheme.textPrimary,
                             fontSize: 13,
-                            fontFamily: 'monospace',
+                            fontFamily: AppTheme.monospaceFont,
+                            fontFamilyFallback: AppTheme.monospaceFontFallback,
                             fontWeight: FontWeight.bold,
+                            fontFeatures: [FontFeature.tabularFigures()],
                           ),
                         ),
                       ),

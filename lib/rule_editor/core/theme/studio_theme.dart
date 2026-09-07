@@ -38,8 +38,12 @@ class StudioTheme {
   static const Color centerCellUpdatedDead = Color(0xFF475569);  // Quiescent slate
 
   // Fonts
-  static const String monoFont = 'JetBrains Mono';
+  static const String monoFont = 'DejaVu Sans Mono';
   static const List<String> monoFontFamilyFallback = [
+    'DejaVu Sans Mono',
+    'Liberation Mono',
+    'Ubuntu Mono',
+    'Noto Sans Mono',
     'JetBrains Mono',
     'Fira Code',
     'Consolas',

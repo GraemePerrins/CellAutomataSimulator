@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 import '../../controllers/simulation_controller.dart';
@@ -24,6 +25,48 @@ class _CellGridViewportState extends State<CellGridViewport> {
   int _drawMode = 1; // 1 = draw alive, 0 = erase
   bool _isPanning = false;
   Offset _lastPanPos = Offset.zero;
+
+  final GlobalKey _gridRepaintKey = GlobalKey();
+  bool _isCapturingFrame = false;
+  int _lastCapturedGeneration = -1;
+
+  void _maybeCaptureFrame() {
+    if (!widget.controller.isRecording) return;
+    final gen = widget.controller.generation;
+    if (gen == _lastCapturedGeneration) return;
+    if (_isCapturingFrame) return;
+
+    _isCapturingFrame = true;
+    _lastCapturedGeneration = gen;
+
+    Future.microtask(() async {
+      try {
+        if (!widget.controller.isRecording || !mounted) {
+          _isCapturingFrame = false;
+          return;
+        }
+        final boundary = _gridRepaintKey.currentContext?.findRenderObject()
+            as RenderRepaintBoundary?;
+        if (boundary == null || boundary.debugNeedsPaint) {
+          _isCapturingFrame = false;
+          return;
+        }
+
+        final image = await boundary.toImage(pixelRatio: 1.0);
+        final byteData =
+            await image.toByteData(format: ui.ImageByteFormat.rawRgba);
+        image.dispose();
+
+        if (byteData != null && widget.controller.isRecording && mounted) {
+          widget.controller.pushRecordingFrame(byteData.buffer.asUint8List());
+        }
+      } catch (e) {
+        debugPrint('Error capturing frame for recording: $e');
+      } finally {
+        _isCapturingFrame = false;
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -153,8 +196,22 @@ class _CellGridViewportState extends State<CellGridViewport> {
             final baseCellSize = min(viewportWidth / cols, viewportHeight / rows);
             final effectiveCellSize = baseCellSize * widget.controller.zoom;
 
-            final activeWidth = cols * effectiveCellSize;
-            final activeHeight = rows * effectiveCellSize;
+            final rawActiveWidth = cols * effectiveCellSize;
+            final rawActiveHeight = rows * effectiveCellSize;
+
+            final activeWidth = widget.controller.recordingWidth != null
+                ? widget.controller.recordingWidth!.toDouble()
+                : ((rawActiveWidth.round() ~/ 2) * 2).toDouble();
+            final activeHeight = widget.controller.recordingHeight != null
+                ? widget.controller.recordingHeight!.toDouble()
+                : ((rawActiveHeight.round() ~/ 2) * 2).toDouble();
+
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                widget.controller.updateGridDisplaySize(activeWidth, activeHeight);
+                _maybeCaptureFrame();
+              }
+            });
 
             // Symmetrical centering with letterbox/pillarbox margins + pan offset
             final baseOffsetX = (viewportWidth - activeWidth) / 2.0;
@@ -216,18 +273,35 @@ class _CellGridViewportState extends State<CellGridViewport> {
                         top: totalOffsetY,
                         width: activeWidth,
                         height: activeHeight,
-                        child: CustomPaint(
-                          size: Size(activeWidth, activeHeight),
-                          painter: CellGridCanvas(
-                            gridImage: widget.controller.currentImage,
-                            shader: shader,
-                            cols: cols,
-                            rows: rows,
-                            cellShape: widget.controller.cellShape,
-                            cellPadding: widget.controller.cellPadding,
-                            aliveColor: widget.controller.aliveColor,
-                            activeWidth: activeWidth,
-                            activeHeight: activeHeight,
+                        child: RepaintBoundary(
+                          key: _gridRepaintKey,
+                          child: Stack(
+                            children: [
+                              CustomPaint(
+                                size: Size(activeWidth, activeHeight),
+                                painter: CellGridCanvas(
+                                  gridImage: widget.controller.currentImage,
+                                  shader: shader,
+                                  cols: cols,
+                                  rows: rows,
+                                  cellShape: widget.controller.cellShape,
+                                  cellPadding: widget.controller.cellPadding,
+                                  aliveColor: widget.controller.aliveColor,
+                                  activeWidth: activeWidth,
+                                  activeHeight: activeHeight,
+                                ),
+                              ),
+
+                              // Bottom Telemetry HUD Overlay (Included in Video Recording)
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                child: IgnorePointer(
+                                  child: _buildProgressOverlayHUD(),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -254,6 +328,114 @@ class _CellGridViewportState extends State<CellGridViewport> {
           },
         );
       },
+    );
+  }
+
+  Widget _buildProgressOverlayHUD() {
+    final currentGen = widget.controller.generation;
+    final maxGen = widget.controller.maxGenerations;
+    final progress =
+        maxGen > 0 ? (currentGen / maxGen).clamp(0.0, 1.0) : 0.0;
+    final totalStr = maxGen > 0 ? maxGen.toString() : '∞';
+    final padLength = maxGen > 0 ? totalStr.length : 5;
+    final genStr = currentGen.toString().padLeft(padLength, '0');
+
+    return Container(
+      height: 28,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.surface900.withOpacity(0.85),
+        border: Border(
+          top: BorderSide(color: AppTheme.border.withOpacity(0.7), width: 1),
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 450;
+
+          return Row(
+            children: [
+              // Gen Count
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.timelapse_outlined,
+                    size: 13,
+                    color: AppTheme.textSecondary,
+                  ),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Gen $genStr / $totalStr',
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: AppTheme.monospaceFont,
+                      fontFamilyFallback: AppTheme.monospaceFontFallback,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(width: 12),
+
+              // Progress Bar
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: Container(
+                    height: 5,
+                    color: AppTheme.surface700,
+                    child: FractionallySizedBox(
+                      alignment: Alignment.centerLeft,
+                      widthFactor: progress,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppTheme.aliveColor,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.aliveColor.withOpacity(0.6),
+                              blurRadius: 3,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+
+              // Density
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.grain,
+                    size: 13,
+                    color: AppTheme.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    isCompact
+                        ? '${widget.controller.density.toStringAsFixed(1)}%'
+                        : 'Density: ${widget.controller.density.toStringAsFixed(1)}%',
+                    style: const TextStyle(
+                      color: AppTheme.textPrimary,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: AppTheme.monospaceFont,
+                      fontFamilyFallback: AppTheme.monospaceFontFallback,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }

@@ -81,7 +81,9 @@ class CanvasHudOverlay extends StatelessWidget {
                   style: const TextStyle(
                     color: AppTheme.textSecondary,
                     fontSize: 11,
-                    fontFamily: 'monospace',
+                    fontFamily: AppTheme.monospaceFont,
+                    fontFamilyFallback: AppTheme.monospaceFontFallback,
+                    fontFeatures: [FontFeature.tabularFigures()],
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -97,8 +99,10 @@ class CanvasHudOverlay extends StatelessWidget {
                   style: const TextStyle(
                     color: AppTheme.aliveGlow,
                     fontSize: 11,
-                    fontFamily: 'monospace',
+                    fontFamily: AppTheme.monospaceFont,
+                    fontFamilyFallback: AppTheme.monospaceFontFallback,
                     fontWeight: FontWeight.w500,
+                    fontFeatures: [FontFeature.tabularFigures()],
                   ),
                 ),
               ],

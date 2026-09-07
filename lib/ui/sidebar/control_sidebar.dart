@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 import '../../controllers/simulation_controller.dart';
 import '../../models/cell_shape.dart';
@@ -188,7 +189,9 @@ class _ControlSidebarState extends State<ControlSidebar> {
                 color: AppTheme.cyanAccent,
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
-                fontFamily: 'monospace',
+                fontFamily: AppTheme.monospaceFont,
+                fontFamilyFallback: AppTheme.monospaceFontFallback,
+                fontFeatures: [FontFeature.tabularFigures()],
               ),
             ),
           ),
@@ -546,7 +549,9 @@ class _ControlSidebarState extends State<ControlSidebar> {
             color: isCurrent ? AppTheme.aliveColor : AppTheme.textSecondary,
             fontSize: 14,
             fontWeight: FontWeight.bold,
-            fontFamily: 'monospace',
+            fontFamily: AppTheme.monospaceFont,
+            fontFamilyFallback: AppTheme.monospaceFontFallback,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
       ),
@@ -581,30 +586,36 @@ class _ControlSidebarState extends State<ControlSidebar> {
                 style: const TextStyle(
                   color: AppTheme.cyanAccent,
                   fontSize: 14,
-                  fontFamily: 'monospace',
+                  fontFamily: AppTheme.monospaceFont,
+                  fontFamilyFallback: AppTheme.monospaceFontFallback,
                   fontWeight: FontWeight.bold,
+                  fontFeatures: [FontFeature.tabularFigures()],
                 ),
               ),
             ],
           ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppTheme.cyanAccent,
-              inactiveTrackColor: AppTheme.surface700,
-              thumbColor: AppTheme.cyanAccent,
-              overlayColor: AppTheme.cyanAccent.withOpacity(0.2),
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-              trackHeight: 3,
-            ),
-            child: Slider(
-              value: widget.controller.stepIntervalMs.toDouble(),
-              min: 10,
-              max: 300,
-              divisions: 29,
-              onChanged: (val) => widget.controller.setSpeed(val.round()),
+          SizedBox(
+            height: 24,
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: AppTheme.cyanAccent,
+                inactiveTrackColor: AppTheme.surface700,
+                thumbColor: AppTheme.cyanAccent,
+                overlayColor: AppTheme.cyanAccent.withOpacity(0.2),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+                trackHeight: 3,
+              ),
+              child: Slider(
+                value: widget.controller.stepIntervalMs.toDouble(),
+                min: 10,
+                max: 300,
+                divisions: 29,
+                onChanged: (val) => widget.controller.setSpeed(val.round()),
+              ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 4),
 
           // Total / Max Generations
           Row(
@@ -625,8 +636,10 @@ class _ControlSidebarState extends State<ControlSidebar> {
                 style: const TextStyle(
                   color: AppTheme.cyanAccent,
                   fontSize: 14,
-                  fontFamily: 'monospace',
+                  fontFamily: AppTheme.monospaceFont,
+                  fontFamilyFallback: AppTheme.monospaceFontFallback,
                   fontWeight: FontWeight.bold,
+                  fontFeatures: [FontFeature.tabularFigures()],
                 ),
               ),
             ],
@@ -810,30 +823,317 @@ class _ControlSidebarState extends State<ControlSidebar> {
                 style: const TextStyle(
                   color: AppTheme.cyanAccent,
                   fontSize: 14,
-                  fontFamily: 'monospace',
+                  fontFamily: AppTheme.monospaceFont,
+                  fontFamilyFallback: AppTheme.monospaceFontFallback,
                   fontWeight: FontWeight.bold,
+                  fontFeatures: [FontFeature.tabularFigures()],
                 ),
               ),
             ],
           ),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppTheme.aliveColor,
-              inactiveTrackColor: AppTheme.surface700,
-              thumbColor: AppTheme.aliveColor,
-              overlayColor: AppTheme.aliveColor.withOpacity(0.2),
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-              trackHeight: 3,
+          SizedBox(
+            height: 24,
+            child: SliderTheme(
+              data: SliderTheme.of(context).copyWith(
+                activeTrackColor: AppTheme.aliveColor,
+                inactiveTrackColor: AppTheme.surface700,
+                thumbColor: AppTheme.aliveColor,
+                overlayColor: AppTheme.aliveColor.withOpacity(0.2),
+                thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                overlayShape: const RoundSliderOverlayShape(overlayRadius: 10),
+                trackHeight: 3,
+              ),
+              child: Slider(
+                value: widget.controller.cellPadding,
+                min: 0.0,
+                max: 0.4,
+                onChanged: (val) => widget.controller.setCellPadding(val),
+              ),
             ),
-            child: Slider(
-              value: widget.controller.cellPadding,
-              min: 0.0,
-              max: 0.4,
-              onChanged: (val) => widget.controller.setCellPadding(val),
+          ),
+          const SizedBox(height: 6),
+          const Divider(color: AppTheme.border, height: 1),
+          const SizedBox(height: 6),
+
+          // MP4 Video Recording Section
+          _buildRecordingSection(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRecordingSection() {
+    final isRecording = widget.controller.isRecording;
+    final lastPath = widget.controller.lastSavedVideoPath;
+    final error = widget.controller.recordingError;
+
+    final gridW = (widget.controller.gridDisplayWidth > 0
+            ? widget.controller.gridDisplayWidth
+            : widget.controller.width.toDouble())
+        .round();
+    final gridH = (widget.controller.gridDisplayHeight > 0
+            ? widget.controller.gridDisplayHeight
+            : widget.controller.height.toDouble())
+        .round();
+    final evenW = (gridW ~/ 2) * 2;
+    final evenH = (gridH ~/ 2) * 2;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Flexible(
+              child: Text(
+                'Video Recording (MP4)',
+                style: TextStyle(color: AppTheme.textSecondary, fontSize: 11),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: isRecording
+                    ? AppTheme.redAccent.withOpacity(0.15)
+                    : AppTheme.surface900,
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(
+                  color: isRecording ? AppTheme.redAccent : AppTheme.border,
+                ),
+              ),
+              child: Text(
+                '$evenW×$evenH px',
+                style: TextStyle(
+                  color: isRecording ? AppTheme.redAccent : AppTheme.cyanAccent,
+                  fontSize: 11,
+                  fontFamily: AppTheme.monospaceFont,
+                  fontFamilyFallback: AppTheme.monospaceFontFallback,
+                  fontWeight: FontWeight.bold,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (!isRecording) ...[
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.surface700,
+              foregroundColor: AppTheme.textPrimary,
+              elevation: 0,
+              side: const BorderSide(color: AppTheme.border),
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            icon: const Icon(
+              Icons.fiber_manual_record_rounded,
+              color: AppTheme.redAccent,
+              size: 16,
+            ),
+            label: const Text(
+              'RECORD SIMULATION AS MP4',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
+              ),
+            ),
+            onPressed: () => widget.controller.startRecording(),
+          ),
+        ] else ...[
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppTheme.surface900,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppTheme.redAccent.withOpacity(0.6)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: AppTheme.redAccent,
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.redAccent.withOpacity(0.7),
+                                blurRadius: 6,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Text(
+                          'RECORDING ACTIVE',
+                          style: TextStyle(
+                            color: AppTheme.redAccent,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      '${widget.controller.recordedFrameCount} frames',
+                      style: const TextStyle(
+                        color: AppTheme.textPrimary,
+                        fontSize: 11,
+                        fontFamily: AppTheme.monospaceFont,
+                        fontFamilyFallback: AppTheme.monospaceFontFallback,
+                        fontWeight: FontWeight.bold,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.redAccent,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  icon: const Icon(Icons.stop_rounded, size: 16),
+                  label: const Text(
+                    'STOP & SAVE MP4',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  onPressed: () => widget.controller.stopRecording(),
+                ),
+              ],
             ),
           ),
         ],
-      ),
+
+        // Notification Banner: Success or Error
+        if (lastPath != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.aliveColor.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppTheme.aliveColor.withOpacity(0.4)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: AppTheme.aliveColor,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Saved: ${p.basename(lastPath)}',
+                        style: const TextStyle(
+                          color: AppTheme.aliveColor,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        lastPath,
+                        style: const TextStyle(
+                          color: AppTheme.textSecondary,
+                          fontSize: 10,
+                          fontFamily: AppTheme.monospaceFont,
+                          fontFamilyFallback: AppTheme.monospaceFontFallback,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                InkWell(
+                  onTap: () => widget.controller.clearRecordingNotification(),
+                  borderRadius: BorderRadius.circular(4),
+                  child: const Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Icon(
+                      Icons.close,
+                      size: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+        if (error != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppTheme.redAccent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppTheme.redAccent.withOpacity(0.4)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: AppTheme.redAccent,
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    error,
+                    style: const TextStyle(
+                      color: AppTheme.redAccent,
+                      fontSize: 11,
+                    ),
+                  ),
+                ),
+                InkWell(
+                  onTap: () => widget.controller.clearRecordingNotification(),
+                  borderRadius: BorderRadius.circular(4),
+                  child: const Padding(
+                    padding: EdgeInsets.all(2),
+                    child: Icon(
+                      Icons.close,
+                      size: 14,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -859,8 +1159,10 @@ class _ControlSidebarState extends State<ControlSidebar> {
           style: TextStyle(
             color: isCurrent ? AppTheme.cyanAccent : AppTheme.textSecondary,
             fontSize: 14,
-            fontFamily: 'monospace',
+            fontFamily: AppTheme.monospaceFont,
+            fontFamilyFallback: AppTheme.monospaceFontFallback,
             fontWeight: FontWeight.bold,
+            fontFeatures: const [FontFeature.tabularFigures()],
           ),
         ),
       ),

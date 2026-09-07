@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:cell_automata/main.dart';
+import 'package:cell_automata/theme/app_theme.dart';
 import 'package:cell_automata/ui/header/studio_window_header.dart';
 
 void main() {
@@ -192,6 +193,36 @@ void main() {
     // Close modal
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
+  });
+
+  testWidgets('SimulationProgressFooter displays Gen X / total with matching monospace font and fixed width',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const CaStudioApp());
+    await tester.pump();
+
+    // Verify fixed width SizedBox for generation counter exists
+    final genBoxFinder = find.byWidgetPredicate(
+      (widget) => widget is SizedBox && widget.width == 220,
+    );
+    expect(genBoxFinder, findsOneWidget);
+
+    // Verify Gen and total count text
+    final genTextFinder = find.descendant(
+      of: genBoxFinder,
+      matching: find.byType(Text),
+    );
+    expect(genTextFinder, findsOneWidget);
+
+    final genText = tester.widget<Text>(genTextFinder);
+    expect(genText.data, equals('Gen 0000 / 1000'));
+    expect(genText.style?.fontFamily, equals(AppTheme.monospaceFont));
+    expect(genText.style?.fontFamilyFallback, equals(AppTheme.monospaceFontFallback));
+    expect(genText.style?.fontSize, equals(13));
+    expect(genText.style?.fontWeight, equals(FontWeight.bold));
   });
 }
 

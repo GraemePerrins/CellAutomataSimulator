@@ -4,10 +4,12 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 
 import '../models/cell_shape.dart';
 import '../models/preset_rule.dart';
 import '../rule_editor/services/rule_storage_service.dart';
+import '../services/simulation_recorder_service.dart';
 import '../simulation/simulation_isolate_worker.dart';
 import '../simulation/simulation_messages.dart';
 
@@ -40,7 +42,18 @@ class SimulationController extends ChangeNotifier {
   CellShape cellShape = CellShape.square;
   double cellPadding = 0.08;
   Color aliveColor = const Color(0xFF10B981);
-  bool isRecording = false;
+
+  // Recording engine
+  final SimulationRecorderService _recorder;
+  bool get isRecording => _recorder.isRecording;
+  int get recordedFrameCount => _recorder.frameCount;
+  int? get recordingWidth => _recorder.isRecording ? _recorder.recordingWidth : null;
+  int? get recordingHeight => _recorder.isRecording ? _recorder.recordingHeight : null;
+  String? lastSavedVideoPath;
+  String? recordingStatusMessage;
+  String? recordingError;
+  double gridDisplayWidth = 0.0;
+  double gridDisplayHeight = 0.0;
 
   // Texture state
   ui.Image? currentImage;
@@ -60,7 +73,8 @@ class SimulationController extends ChangeNotifier {
   double get density =>
       width * height > 0 ? (aliveCount / (width * height)) * 100.0 : 0.0;
 
-  SimulationController() {
+  SimulationController({SimulationRecorderService? recorder})
+      : _recorder = recorder ?? SimulationRecorderService() {
     refreshPresets();
     _startIsolate();
   }
@@ -148,6 +162,9 @@ class SimulationController extends ChangeNotifier {
     // Check max generations stop condition
     if (maxGenerations > 0 && generation >= maxGenerations && isRunning) {
       pause();
+      if (isRecording) {
+        stopRecording();
+      }
     }
 
     // Measure FPS
@@ -306,9 +323,114 @@ class SimulationController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void toggleRecording() {
-    isRecording = !isRecording;
+  void updateGridDisplaySize(double w, double h) {
+    if (gridDisplayWidth != w || gridDisplayHeight != h) {
+      gridDisplayWidth = w;
+      gridDisplayHeight = h;
+    }
+  }
+
+  Future<bool> startRecording({
+    int? customWidth,
+    int? customHeight,
+    double? customFps,
+  }) async {
+    recordingError = null;
+    lastSavedVideoPath = null;
+
+    final ffmpegAvailable = await SimulationRecorderService.isFfmpegAvailable();
+    if (!ffmpegAvailable) {
+      recordingError =
+          'FFmpeg not found. Please install ffmpeg to record MP4 videos.';
+      notifyListeners();
+      return false;
+    }
+
+    final targetWidth = (customWidth ??
+            (gridDisplayWidth > 0 ? gridDisplayWidth : width.toDouble()))
+        .round();
+    final targetHeight = (customHeight ??
+            (gridDisplayHeight > 0 ? gridDisplayHeight : height.toDouble()))
+        .round();
+
+    final ruleName = isCustomRule ? customRuleName : activePreset.name;
+    final fps = customFps ?? (1000.0 / stepIntervalMs).clamp(10.0, 60.0);
+
+    try {
+      final success = await _recorder.startRecording(
+        ruleName: ruleName,
+        width: targetWidth,
+        height: targetHeight,
+        fps: fps,
+      );
+      if (success) {
+        recordingStatusMessage =
+            'Recording started (${_recorder.recordingWidth}×${_recorder.recordingHeight})';
+        if (!isRunning) {
+          play();
+        }
+      }
+      notifyListeners();
+      return success;
+    } catch (e) {
+      recordingError = 'Failed to start recording: $e';
+      notifyListeners();
+      return false;
+    }
+  }
+
+  void pushRecordingFrame(Uint8List rgbaBytes) {
+    if (!isRecording) return;
+    _recorder.addFrame(rgbaBytes);
+    // Periodically notify listeners to update frame count badge
+    if (_recorder.frameCount % 5 == 0) {
+      notifyListeners();
+    }
+  }
+
+  Future<String?> stopRecording() async {
+    if (!isRecording) return null;
+    recordingStatusMessage = 'Finalizing MP4 video...';
     notifyListeners();
+
+    try {
+      final savedPath = await _recorder.stopRecording();
+      if (savedPath != null) {
+        lastSavedVideoPath = savedPath;
+        recordingStatusMessage = 'Video saved: ${p.basename(savedPath)}';
+      } else {
+        recordingError =
+            'Recording stopped but output file could not be generated.';
+      }
+      notifyListeners();
+      return savedPath;
+    } catch (e) {
+      recordingError = 'Error saving video: $e';
+      notifyListeners();
+      return null;
+    }
+  }
+
+  void cancelRecording() {
+    if (!isRecording) return;
+    _recorder.cancelRecording();
+    recordingStatusMessage = null;
+    notifyListeners();
+  }
+
+  void clearRecordingNotification() {
+    lastSavedVideoPath = null;
+    recordingError = null;
+    recordingStatusMessage = null;
+    notifyListeners();
+  }
+
+  Future<void> toggleRecording() async {
+    if (isRecording) {
+      await stopRecording();
+    } else {
+      await startRecording();
+    }
   }
 
   // Viewport interactions
@@ -341,6 +463,7 @@ class SimulationController extends ChangeNotifier {
 
   @override
   void dispose() {
+    cancelRecording();
     _workerCommandPort?.send(PauseSimulationMessage());
     _workerIsolate?.kill(priority: Isolate.immediate);
     _uiReceivePort?.close();

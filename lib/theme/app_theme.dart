@@ -23,6 +23,17 @@ class AppTheme {
   static const Color textSecondary = Color(0xFF94A3B8);
   static const Color textMuted = Color(0xFF64748B);
 
+  // Fixed-width Monospace Fonts
+  static const String monospaceFont = 'DejaVu Sans Mono';
+  static const List<String> monospaceFontFallback = [
+    'DejaVu Sans Mono',
+    'Liberation Mono',
+    'Ubuntu Mono',
+    'Noto Sans Mono',
+    'Courier New',
+    'monospace',
+  ];
+
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
