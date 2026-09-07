@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:path/path.dart' as p;
 import '../core/syntax/evaluator.dart';
 import '../core/syntax/parser.dart';
 import '../models/cell_rule.dart';
@@ -153,15 +154,26 @@ class RuleStudioController extends ChangeNotifier {
     );
   }
 
-  /// Saves the current rule to RuleEditor/rules/<name>.json
-  Future<File?> saveCurrentRule() async {
+  /// Saves the current rule to rules/<name>.json.
+  /// If [saveAsNew] is true, or if the rule name differs from the current file name,
+  /// it automatically writes to a new file corresponding to the new rule name.
+  Future<File?> saveCurrentRule({bool saveAsNew = false}) async {
     final rule = CellRule(
       name: ruleName,
       expression: expressionController.text,
     );
 
+    String? targetPath;
+    if (!saveAsNew && currentFilePath != null) {
+      final currentBaseName = p.basenameWithoutExtension(currentFilePath!);
+      final sanitizedCurrentName = storageService.sanitizeFileName(ruleName);
+      if (currentBaseName.toLowerCase() == sanitizedCurrentName.toLowerCase()) {
+        targetPath = currentFilePath;
+      }
+    }
+
     try {
-      final file = await storageService.saveRule(rule, currentFilePath);
+      final file = await storageService.saveRule(rule, targetPath);
       currentFilePath = file.path;
       statusMessage = "Saved rule to ${file.path}";
       notifyListeners();

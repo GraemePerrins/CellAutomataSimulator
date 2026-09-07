@@ -87,5 +87,34 @@ void main() {
             reason: 'Rule ${controller.ruleName} parsed as invalid: ${controller.validationResult.errorMessage}');
       }
     });
+
+    test('Specifying a new rule name and saving creates a file with that name', () async {
+      final tempDir = Directory.systemTemp.createTempSync('ca_test_rules_');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
+
+      final customStorage = RuleStorageService(customRulesPath: tempDir.path);
+      final testController = RuleStudioController(storage: customStorage);
+      addTearDown(() => testController.dispose());
+
+      testController.nameController.text = 'Super Glider Rule';
+      testController.expressionController.text = 'cell = [countOn() == 2]';
+
+      final savedFile = await testController.saveCurrentRule();
+      expect(savedFile, isNotNull);
+      expect(savedFile!.existsSync(), isTrue);
+      expect(p.basename(savedFile.path), 'Super Glider Rule.json');
+
+      // Now change the name and save again
+      testController.nameController.text = 'Blinker Clone';
+      final secondFile = await testController.saveCurrentRule();
+      expect(secondFile, isNotNull);
+      expect(secondFile!.existsSync(), isTrue);
+      expect(p.basename(secondFile.path), 'Blinker Clone.json');
+
+      // Verify both files exist
+      final files = customStorage.listRuleFiles();
+      expect(files.length, 2);
+    });
   });
 }
+

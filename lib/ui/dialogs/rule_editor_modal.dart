@@ -4,6 +4,7 @@ import '../../controllers/simulation_controller.dart';
 import '../../rule_editor/core/theme/studio_theme.dart';
 import '../../rule_editor/providers/rule_studio_controller.dart';
 import '../../rule_editor/ui/widgets/cell_rule_test/cell_rule_test_panel.dart';
+import '../../rule_editor/ui/widgets/dialogs/rule_file_dialog.dart';
 import '../../rule_editor/ui/widgets/rule_editor/rule_editor_panel.dart';
 import '../../theme/app_theme.dart';
 
@@ -112,35 +113,130 @@ class _RuleEditorModalDialogState extends State<RuleEditorModalDialog> {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    Icons.terminal_rounded,
-                    size: 16,
-                    color: AppTheme.aliveColor,
-                  ),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'RULE STUDIO WORKSTATION',
-                    style: TextStyle(
-                      color: AppTheme.textPrimary,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.8,
+                  const Expanded(
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.terminal_rounded,
+                          size: 16,
+                          color: AppTheme.aliveColor,
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          'RULE STUDIO WORKSTATION',
+                          style: TextStyle(
+                            color: AppTheme.textPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          '•',
+                          style: TextStyle(color: AppTheme.textMuted),
+                        ),
+                        SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'AST Grammar & 3×3 Moore Neighborhood',
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    '•',
-                    style: TextStyle(color: AppTheme.textMuted),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text(
-                    'AST Grammar & 3×3 Moore Neighborhood',
-                    style: TextStyle(
-                      color: AppTheme.textSecondary,
-                      fontSize: 11,
+                  const SizedBox(width: 12),
+
+                  // New Rule
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.textSecondary,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                     ),
+                    icon: const Icon(Icons.add_rounded, size: 15, color: AppTheme.aliveColor),
+                    label: const Text(
+                      'New',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    onPressed: () {
+                      _ruleController.newRule();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Created new rule template with "cell = "'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
                   ),
-                  const Spacer(),
+                  const SizedBox(width: 4),
+
+                  // Load Rule
+                  TextButton.icon(
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppTheme.textSecondary,
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
+                    icon: const Icon(Icons.folder_open_rounded, size: 15, color: AppTheme.cyanAccent),
+                    label: const Text(
+                      'Load',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                    ),
+                    onPressed: () async {
+                      final path = await RuleFileDialog.show(context, _ruleController.storageService);
+                      if (path != null) {
+                        final success = await _ruleController.loadRule(path);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(success ? 'Loaded "${_ruleController.ruleName}"' : 'Failed to load rule'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 4),
+
+                  // Save Rule Action
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: StudioTheme.surfaceContainer,
+                      foregroundColor: AppTheme.cyanAccent,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(6),
+                        side: const BorderSide(color: AppTheme.border),
+                      ),
+                    ),
+                    icon: const Icon(Icons.save_outlined, size: 15, color: AppTheme.cyanAccent),
+                    label: const Text(
+                      'Save Rule',
+                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+                    ),
+                    onPressed: () async {
+                      final file = await _ruleController.saveCurrentRule();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(file != null ? 'Saved rule to ${file.path}' : 'Failed to save rule'),
+                            backgroundColor: AppTheme.surface800,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
 
                   // Apply to Simulation Action
                   ListenableBuilder(

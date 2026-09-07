@@ -120,4 +120,74 @@ void main() {
 
     expect(find.text('125%'), findsOneWidget);
   });
+
+  testWidgets('Grid dimensions W, H, and Total Generations text fields are centered',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const CaStudioApp());
+    await tester.pump();
+
+    // Verify W and H labels exist
+    expect(find.text('W'), findsOneWidget);
+    expect(find.text('H'), findsOneWidget);
+
+    // Verify numeric text fields exist and have centered properties
+    final textFields = find.byType(TextField);
+    expect(textFields, findsNWidgets(3));
+
+    for (var i = 0; i < 3; i++) {
+      final tf = tester.widget<TextField>(textFields.at(i));
+      expect(tf.textAlign, equals(TextAlign.center));
+      expect(tf.textAlignVertical, equals(TextAlignVertical.center));
+      expect(tf.style?.height, equals(1.0));
+      expect(tf.style?.leadingDistribution, equals(TextLeadingDistribution.even));
+      expect(tf.decoration?.isCollapsed, isTrue);
+      expect(tf.decoration?.contentPadding, equals(const EdgeInsets.only(bottom: 1)));
+    }
+  });
+
+  testWidgets('Rule Editor modal provides New, Load, Save Rule actions and allows specifying a new rule name',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1600, 1000);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(const CaStudioApp());
+    await tester.pump();
+
+    // Open Rule Editor modal
+    await tester.tap(find.text('Rule Editor'));
+    await tester.pumpAndSettle();
+
+    // Verify modal header actions exist
+    expect(find.text('RULE STUDIO WORKSTATION'), findsOneWidget);
+    expect(find.text('New'), findsOneWidget);
+    expect(find.text('Load'), findsOneWidget);
+    expect(find.text('Save Rule'), findsOneWidget);
+    expect(find.text('Apply to Simulation'), findsOneWidget);
+
+    // Verify Rule Name Input and inline SAVE button exist
+    expect(find.text('RULE:'), findsOneWidget);
+    expect(find.text('SAVE'), findsOneWidget);
+
+    // Tap 'New' to reset template
+    await tester.tap(find.text('New'));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, 'Untitled Rule'), findsOneWidget);
+
+    // Enter a new rule name
+    final nameField = find.widgetWithText(TextField, 'Untitled Rule');
+    await tester.enterText(nameField, 'My Custom HighLife');
+    await tester.pump();
+
+    expect(find.widgetWithText(TextField, 'My Custom HighLife'), findsOneWidget);
+
+    // Close modal
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+  });
 }
+

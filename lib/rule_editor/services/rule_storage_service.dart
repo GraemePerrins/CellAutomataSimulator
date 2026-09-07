@@ -10,21 +10,34 @@ class RuleStorageService {
       : rulesDirectoryPath = customRulesPath ?? _resolveDefaultRulesDir();
 
   static String _resolveDefaultRulesDir() {
-    // Check if running inside RuleEditor folder
     final currentDir = Directory.current.path;
+
+    // Check if assets/rules directory exists (primary storage for project rules)
+    final assetsRules = p.join(currentDir, 'assets', 'rules');
+    if (Directory(assetsRules).existsSync()) {
+      return assetsRules;
+    }
+
+    // Check if parent directory contains assets/rules
+    final parentAssetsRules = p.join(currentDir, '..', 'assets', 'rules');
+    if (Directory(parentAssetsRules).existsSync()) {
+      return parentAssetsRules;
+    }
+
+    // Check if running inside RuleEditor folder
     final directRules = p.join(currentDir, 'rules');
     if (Directory(directRules).existsSync()) {
       return directRules;
     }
 
-    // Check if parent directory contains RuleEditor/rules
+    // Check if directory contains RuleEditor/rules
     final nestedRules = p.join(currentDir, 'RuleEditor', 'rules');
     if (Directory(nestedRules).existsSync()) {
       return nestedRules;
     }
 
     // Default fallback
-    return directRules;
+    return assetsRules;
   }
 
   Directory get rulesDirectory {
