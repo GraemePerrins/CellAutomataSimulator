@@ -173,6 +173,10 @@ void main() {
     expect(find.text('RULE:'), findsOneWidget);
     expect(find.text('SAVE'), findsOneWidget);
 
+    // Verify Rule Editor selection box exists
+    expect(find.text('SELECT RULE:'), findsOneWidget);
+    expect(find.textContaining('rules loaded'), findsOneWidget);
+
     // Tap 'New' to reset template
     await tester.tap(find.text('New'));
     await tester.pumpAndSettle();

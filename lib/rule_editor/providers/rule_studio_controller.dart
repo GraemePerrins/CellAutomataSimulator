@@ -17,6 +17,7 @@ class RuleStudioController extends ChangeNotifier {
   NeighborhoodState neighborhoodState;
   ValidationResult validationResult = const ValidationResult.invalid("Uninitialized");
 
+  List<CellRule> availableRules = [];
   bool centerCellUpdated = false;
   int? lastEvaluatedCenterState;
   String? currentFilePath;
@@ -52,8 +53,30 @@ class RuleStudioController extends ChangeNotifier {
     nameController.addListener(_onNameChanged);
     expressionController.addListener(_onExpressionChanged);
 
-    // Initial validation
+    // Initial validation and rules loading
     _validateCurrentExpression();
+    refreshAvailableRules();
+  }
+
+  /// Reloads all valid JSON rules discovered in the rules directory.
+  void refreshAvailableRules() {
+    availableRules = storageService.loadValidRules();
+    notifyListeners();
+  }
+
+  /// Switches the editor to a selected rule.
+  void selectRule(CellRule rule) {
+    nameController.text = rule.name;
+    expressionController.text = rule.expression;
+    currentFilePath = p.join(
+      storageService.rulesDirectory.path,
+      '${storageService.sanitizeFileName(rule.name)}.json',
+    );
+    centerCellUpdated = false;
+    lastEvaluatedCenterState = null;
+    statusMessage = "Selected rule: ${rule.name}";
+    _validateCurrentExpression();
+    notifyListeners();
   }
 
   String get ruleName => nameController.text.trim().isEmpty
@@ -176,7 +199,7 @@ class RuleStudioController extends ChangeNotifier {
       final file = await storageService.saveRule(rule, targetPath);
       currentFilePath = file.path;
       statusMessage = "Saved rule to ${file.path}";
-      notifyListeners();
+      refreshAvailableRules();
       return file;
     } catch (e) {
       statusMessage = "Error saving rule: $e";
@@ -196,7 +219,7 @@ class RuleStudioController extends ChangeNotifier {
       lastEvaluatedCenterState = null;
       statusMessage = "Loaded rule: ${rule.name}";
       _validateCurrentExpression();
-      notifyListeners();
+      refreshAvailableRules();
       return true;
     } catch (e) {
       statusMessage = "Error loading rule: $e";

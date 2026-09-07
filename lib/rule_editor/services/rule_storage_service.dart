@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as p;
+import '../core/syntax/parser.dart';
 import '../models/cell_rule.dart';
 
 class RuleStorageService {
@@ -53,6 +54,50 @@ class RuleStorageService {
     final files = dir.listSync().where((f) => f.path.endsWith('.json')).toList();
     files.sort((a, b) => p.basename(a.path).toLowerCase().compareTo(p.basename(b.path).toLowerCase()));
     return files;
+  }
+
+  /// Reads and parses all .json files in the rules directory.
+  /// Filters out malformed files and only returns rules that are valid JSON
+  /// and have syntactically valid AST expressions.
+  List<CellRule> loadValidRules() {
+    final dir = rulesDirectory;
+    if (!dir.existsSync()) return [];
+
+    final files = listRuleFiles();
+    final List<CellRule> validRules = [];
+    final Set<String> seenNames = {};
+
+    for (final file in files) {
+      if (file is! File) continue;
+      try {
+        final content = file.readAsStringSync();
+        final json = jsonDecode(content);
+        if (json is! Map<String, dynamic>) continue;
+
+        final rawName = json['name'];
+        final rawExpr = json['expression'];
+        if (rawName is! String || rawName.trim().isEmpty) continue;
+        if (rawExpr is! String || rawExpr.trim().isEmpty) continue;
+
+        final name = rawName.trim();
+        final expr = rawExpr.trim();
+
+        // Validate AST syntax
+        final parseResult = RuleParser.parseString(expr);
+        if (!parseResult.isValid) continue;
+
+        // Deduplicate by name if identical names exist
+        if (seenNames.contains(name.toLowerCase())) continue;
+        seenNames.add(name.toLowerCase());
+
+        validRules.add(CellRule(name: name, expression: expr));
+      } catch (_) {
+        // Silently skip invalid or non-json files
+      }
+    }
+
+    validRules.sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return validRules;
   }
 
   String sanitizeFileName(String name) {

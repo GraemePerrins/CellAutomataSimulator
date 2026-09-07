@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../controllers/simulation_controller.dart';
 import '../../models/cell_shape.dart';
-import '../../models/preset_rule.dart';
 import '../../theme/app_theme.dart';
 
 class ControlSidebar extends StatefulWidget {
@@ -240,6 +239,13 @@ class _ControlSidebarState extends State<ControlSidebar> {
   Widget _buildRulesPanel() {
     final activePreset = widget.controller.activePreset;
     final isCustom = widget.controller.isCustomRule;
+    final availablePresets = widget.controller.availablePresets;
+    final hasActivePreset = availablePresets.any((p) => p.id == activePreset.id);
+    final selectedValue = isCustom
+        ? 'custom'
+        : (hasActivePreset
+            ? activePreset.id
+            : (availablePresets.isNotEmpty ? availablePresets.first.id : null));
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -263,10 +269,10 @@ class _ControlSidebarState extends State<ControlSidebar> {
               child: DropdownButton<String>(
                 isExpanded: true,
                 dropdownColor: AppTheme.surface800,
-                value: isCustom ? 'custom' : activePreset.id,
+                value: selectedValue,
                 selectedItemBuilder: (context) {
                   return [
-                    ...PresetRule.presets.map((p) => Align(
+                    ...availablePresets.map((p) => Align(
                           alignment: Alignment.centerLeft,
                           child: Text(
                             p.name,
@@ -292,7 +298,7 @@ class _ControlSidebarState extends State<ControlSidebar> {
                   ];
                 },
                 items: [
-                  ...PresetRule.presets.map((p) => DropdownMenuItem(
+                  ...availablePresets.map((p) => DropdownMenuItem(
                         value: p.id,
                         child: Text(
                           p.name,
@@ -318,7 +324,7 @@ class _ControlSidebarState extends State<ControlSidebar> {
                 ],
                 onChanged: (val) {
                   if (val != null && val != 'custom') {
-                    final found = PresetRule.presets.firstWhere((p) => p.id == val);
+                    final found = availablePresets.firstWhere((p) => p.id == val);
                     widget.controller.selectPreset(found);
                   }
                 },

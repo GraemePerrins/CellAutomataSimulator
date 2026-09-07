@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 
 import '../models/cell_shape.dart';
 import '../models/preset_rule.dart';
+import '../rule_editor/services/rule_storage_service.dart';
 import '../simulation/simulation_isolate_worker.dart';
 import '../simulation/simulation_messages.dart';
 
@@ -31,6 +32,7 @@ class SimulationController extends ChangeNotifier {
   int stepIntervalMs = 30;
   int maxGenerations = 1000;
   PresetRule activePreset = PresetRule.presets[0];
+  List<PresetRule> availablePresets = [...PresetRule.presets];
   String customRuleName = "Custom";
   String customRuleExpression = "";
   bool isCustomRule = false;
@@ -59,7 +61,58 @@ class SimulationController extends ChangeNotifier {
       width * height > 0 ? (aliveCount / (width * height)) * 100.0 : 0.0;
 
   SimulationController() {
+    refreshPresets();
     _startIsolate();
+  }
+
+  /// Discovers and loads all valid JSON rules from assets/rules/ into availablePresets.
+  void refreshPresets() {
+    try {
+      final storage = RuleStorageService();
+      final validRules = storage.loadValidRules();
+      if (validRules.isNotEmpty) {
+        final List<PresetRule> loaded = [];
+        final Set<String> ids = {};
+
+        for (final rule in validRules) {
+          final matchingPreset = PresetRule.presets.where(
+            (p) => p.name.toLowerCase() == rule.name.toLowerCase(),
+          );
+          if (matchingPreset.isNotEmpty) {
+            loaded.add(matchingPreset.first);
+            ids.add(matchingPreset.first.id);
+          } else {
+            var baseId = rule.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_');
+            if (baseId.isEmpty) baseId = 'rule';
+            var id = baseId;
+            var counter = 1;
+            while (ids.contains(id)) {
+              id = '${baseId}_$counter';
+              counter++;
+            }
+            ids.add(id);
+            loaded.add(
+              PresetRule(
+                id: id,
+                name: rule.name,
+                description: rule.name,
+                expression: rule.expression,
+                survive: const [],
+                birth: const [],
+                isTotalistic: false,
+              ),
+            );
+          }
+        }
+        availablePresets = loaded;
+        if (!isCustomRule && !availablePresets.any((p) => p.id == activePreset.id)) {
+          activePreset = availablePresets.first;
+        }
+        notifyListeners();
+      }
+    } catch (_) {
+      // Fallback to static presets
+    }
   }
 
   Future<void> _startIsolate() async {
@@ -234,6 +287,7 @@ class SimulationController extends ChangeNotifier {
         isTotalistic: false,
       ),
     );
+    refreshPresets();
     notifyListeners();
   }
 

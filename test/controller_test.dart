@@ -115,6 +115,38 @@ void main() {
       final files = customStorage.listRuleFiles();
       expect(files.length, 2);
     });
+
+    test('loadValidRules filters out invalid JSON and invalid syntax files', () {
+      final tempDir = Directory.systemTemp.createTempSync('ca_test_validation_');
+      addTearDown(() => tempDir.deleteSync(recursive: true));
+
+      // 1. Valid rule
+      File(p.join(tempDir.path, 'valid.json')).writeAsStringSync(
+        '{"name": "Valid Rule", "expression": "cell = countOn() == 3"}',
+      );
+
+      // 2. Corrupt JSON
+      File(p.join(tempDir.path, 'corrupt.json')).writeAsStringSync(
+        '{ not valid json at all }',
+      );
+
+      // 3. Invalid AST syntax
+      File(p.join(tempDir.path, 'bad_syntax.json')).writeAsStringSync(
+        '{"name": "Bad Syntax", "expression": "invalid expression without cell ="}',
+      );
+
+      // 4. Missing required fields
+      File(p.join(tempDir.path, 'missing_field.json')).writeAsStringSync(
+        '{"name": "No Expr"}',
+      );
+
+      final storage = RuleStorageService(customRulesPath: tempDir.path);
+      final validRules = storage.loadValidRules();
+
+      expect(validRules.length, 1);
+      expect(validRules.first.name, 'Valid Rule');
+      expect(validRules.first.expression, 'cell = countOn() == 3');
+    });
   });
 }
 
