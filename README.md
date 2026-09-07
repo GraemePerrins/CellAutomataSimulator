@@ -1,4 +1,61 @@
 # cell_automata
+# CA Studio — Cellular Automata Workstation & Rule Studio
+
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
+[![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart)](https://dart.dev)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20Desktop-E95420?logo=linux&logoColor=white)](https://flutter.dev/desktop)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-30%2F30%20Passing-brightgreen.svg)]()
+
+A high-performance, GPU-accelerated Cellular Automata simulation workstation and rule development studio built with Flutter for Linux desktop.
+
+Designed for fluid real-time experimentation with classical totalistic rules, arbitrary grid dimensions, custom AST-based rule scripting, and isolate-backed multi-threaded compute.
+
+---
+
+## Key Features
+
+### 🚀 High-Performance Simulation Engine
+- **Dedicated Background Compute Isolate**: Grid state simulation executes on a separate Dart isolate (`SimulationWorker`), preventing UI jank and maintaining a rock-solid 60 FPS interface even on massive grids.
+- **Hardware-Accelerated Fragment Shader**: GPU rendering pipeline powered by a custom GLSL fragment shader (`cell_grid.frag`) with fallback to optimized Canvas buffer rendering.
+- **Strict 1:1 Cell Aspect Ratio**: Guaranteed square cell geometry with symmetrical centering, pillarboxing/letterboxing margins, and dynamic viewport fitting.
+- **High-Throughput Raw Frame Streaming**: Seamless zero-copy byte buffer transfers between worker isolates and the UI thread.
+
+### 🔬 Rules Engine & Interactive AST Rule Editor
+- **Classical Totalistic Rules Built-In**:
+  - **Conway's Life** (`B3/S23`) — The definitive standard.
+  - **HighLife** (`B36/S23`) — Features the famous Replicator oscillator.
+  - **Seeds** (`B2/S`) — Explosive growth patterns from minimal seeds.
+  - **Life without Death** (`B3/S012345678`) — Ink-spread maze generation.
+  - **34 Life** (`B34/S34`) — Dense oscillator and glider formations.
+  - **Diamoeba** (`B35678/S5678`) — Organic diamond-shaped cell colony growth.
+  - **2x2** (`B36/S125`) — Macro-block and pattern symmetries.
+  - **Day & Night** (`B3678/S34678`) — Symmetric behavior in on/off cell inversion.
+  - **Morley / Move** (`B368/S245`) — Glider-dense, lively particle dynamics.
+  - **Anneal** (`B4678/S35678`) — Majority voting and grain-boundary dynamics.
+- **Custom Rule Editor Dialog**:
+  - Embedded AST lexer and recursive-descent parser.
+  - Interactive syntax expression editing with live error checking and diagnostic highlights.
+  - Function token quick-palette with hover documentation cards.
+  - Live compilation and hot-swapping into the running simulation.
+
+### 🎨 Viewport Navigation & Canvas Ergonomics
+- **Fluid Panning**: Navigate grids of any size using **Middle-Click Drag**, **Right-Click Drag**, **Spacebar + Left-Click Drag**, or dragging outside grid margins with dynamic grab cursor feedback.
+- **Smooth Step Zoom**: Increment/decrement zoom with dedicated `[-] % [+]` controls or mouse scroll wheel.
+- **Interactive In-Grid Cell Editing**: Draw live cells or toggle cell erasure with mouse primary clicks in real time.
+- **Custom Visual Styling**:
+  - Selectable cell geometry: Square or Rounded cells.
+  - Adjustable inter-cell padding.
+  - Live cell alive color palette (Emerald, Deep Purple, Amber, Cyan, Rose) with custom color picker integration.
+
+### ⏱️ Timeline & Telemetry Controls
+- **Playback Strip**: Play/Pause toggle, single-step forward, single-step backward, rewind to Generation 0.
+- **Simulation Speed**: Adjustable step interval (ms) for fine-grained pacing.
+- **Generation Limits**: Run with configurable generation ceilings (e.g., 500, 1000 max) or unlimited ($\infty$) simulation mode with a synchronized progress timeline.
+- **Population Density & FPS Counters**: Real-time FPS telemetry, live cell population tally, and population density percentage display (`Density: 0.0%`).
+- **Jitter-Free Typography**: Fixed-width badges and matched font metrics ensuring telemetry numbers update smoothly without panel jumping.
+
+---
 
 ## Keyboard Shortcuts
 
@@ -70,7 +127,7 @@ graph TD
    cd cellautomata/CellAutomata
    ```
 
-2. **Install Flutter dependencies**:
+2. **Install dependencies**:
    ```bash
    flutter pub get
    ```
@@ -105,25 +162,27 @@ flutter analyze
 ## Project Structure
 
 ```
-CellAutomata/
-├── assets/
-│   ├── rules/                 # Built-in rule definitions & schemas
-│   └── shaders/
-│       └── cell_grid.frag     # GPU fragment shader for high-speed cell rendering
-├── lib/
-│   ├── controllers/           # SimulationController & telemetry state
-│   ├── isolates/              # SimulationWorker background isolate engine
-│   ├── kernels/               # TotalisticKernel & AstEvaluatorKernel
-│   ├── models/                # PresetRule, CellShape, AST definitions
-│   ├── rule_editor/           # Lexer, parser, syntax highlight & editor widgets
-│   ├── theme/                 # Dark studio theme & design system tokens
-│   └── ui/
-│       ├── dialogs/           # Rule Editor modal dialog
-│       ├── header/            # Window header, rule breadcrumbs & telemetry
-│       ├── screens/           # CaStudioMainScreen scaffold
-│       ├── sidebar/           # Geometry, colors, and simulation controls
-│       └── viewport/          # Cell grid canvas, progress timeline, zoom footer
-└── test/                      # Kernel tests, syntax tests, widget smoke tests
+cellautomata/
+├── CellAutomata/              # Main desktop application
+│   ├── assets/
+│   │   ├── rules/             # Built-in rule definitions & schemas
+│   │   └── shaders/
+│   │       └── cell_grid.frag # GPU fragment shader for high-speed cell rendering
+│   ├── lib/
+│   │   ├── controllers/       # SimulationController & telemetry state
+│   │   ├── isolates/          # SimulationWorker background isolate engine
+│   │   ├── kernels/           # TotalisticKernel & AstEvaluatorKernel
+│   │   ├── models/            # PresetRule, CellShape, AST definitions
+│   │   ├── rule_editor/       # Lexer, parser, syntax highlight & editor widgets
+│   │   ├── theme/             # Dark studio theme & design system tokens
+│   │   └── ui/
+│   │       ├── dialogs/       # Rule Editor modal dialog
+│   │       ├── header/        # Window header, rule breadcrumbs & telemetry
+│   │       ├── screens/       # CaStudioMainScreen scaffold
+│   │       ├── sidebar/       # Geometry, colors, and simulation controls
+│   │       └── viewport/      # Cell grid canvas, progress timeline, zoom footer
+│   └── test/                  # Kernel tests, syntax tests, widget smoke tests
+└── RuleEditor/                # Standalone Rule Editor package
 ```
 
 ---
